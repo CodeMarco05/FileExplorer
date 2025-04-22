@@ -7,10 +7,16 @@ use std::{fs};
 use tokio::task;
 use std::fs::read_dir;
 use std::future::Future;
+use std::io::{self};
 use std::io::Write;
 use std::path::Path;
 use std::pin::Pin;
+use std::error::Error;
 use rand::Rng;
+#[cfg(windows)]
+use std::os::windows::fs::MetadataExt;
+
+use faccess::{AccessMode, PathExt};
 
 /// Opens a file at the given path and returns its contents as a string.
 /// Should only be used for text files.
@@ -360,68 +366,130 @@ pub async fn copy_file_or_dir(source_path: &str, destination_path: &str) -> Resu
     }
 }
 
-// checks whether path is system relevant
-#[cfg(target_os = "windows")]
-fn is_protected_path(path: &str) -> bool {
-    let protected_paths = [
-        "C:\\Windows",
-        "C:\\Program Files",
-        "C:\\Program Files (x86)",
-        "C:\\__PROTECTED_TEST_PATH__",
-    ];
+#[derive(Debug)]
+enum AccessCheckError {
+    PathDoesNotExist,
+    SystemFile,
+    ProtectedPath,
+    NonEmptyDirectory,
+    NoParentDirectory,
+    ParentDirAccessDenied(io::Error),
+    TargetAccessDenied(io::Error),
+    IoError(io::Error),
+}
 
-    for protected_path in protected_paths.iter() {
-        if path.starts_with(protected_path) {
-            return true;
+impl std::fmt::Display for AccessCheckError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::PathDoesNotExist => write!(f, "Path does not exist"),
+            Self::SystemFile => write!(f, "Cannot delete system file/directory"),
+            Self::ProtectedPath => write!(f, "Refusing to delete system-protected path"),
+            Self::NonEmptyDirectory => write!(f, "Directory is not empty"),
+            Self::NoParentDirectory => write!(f, "No parent directory found"),
+            Self::ParentDirAccessDenied(e) => write!(f, "No write access to parent directory: {}", e),
+            Self::TargetAccessDenied(e) => write!(f, "No write access to target: {}", e),
+            Self::IoError(e) => write!(f, "IO error: {}", e),
+        }
+    }
+}
+
+impl Error for AccessCheckError {}
+
+fn is_system_file<P: AsRef<Path>>(path: P) -> Result<bool, io::Error> {
+    let path = path.as_ref();
+
+    #[cfg(windows)]
+    {
+        if let Ok(metadata) = path.metadata() {
+            // On Windows, check file attributes
+            // FILE_ATTRIBUTE_SYSTEM = 0x4
+            let attrs = metadata.file_attributes();
+            return Ok((attrs & 0x4) != 0);
         }
     }
 
-    false
+    #[cfg(unix)]
+    {
+        // On Unix-like systems, check if file is in system directories
+        let path_str = path.to_string_lossy();
+        let system_paths = [
+            "/bin/", "/sbin/",
+            "/usr/bin/", "/usr/sbin/",
+            "/etc/", "/var/", "/sys/",
+            "/System/", // macOS system directory
+        ];
+
+        return Ok(system_paths.iter().any(|sys_path| path_str.starts_with(sys_path)));
+    }
+
+    Ok(false)
 }
 
-#[cfg(target_os = "linux")]
-fn is_protected_path(path: &str) -> bool {
-    let protected_paths = [
-        "/etc",
-        "/bin",
-        "/sys",
-        "/usr",
-        "/__protected_test_path__",
-    ];
+// for testing
+fn is_protected_path_test(path: &Path) -> bool {
+    let path_str = path.to_string_lossy();
+    #[cfg(windows)]
+    {
+        path_str.contains("__PROTECTED_TEST_PATH__")
+    }
+    #[cfg(unix)]
+    {
+        path_str.contains("__protected_test_path__")
+    }
+}
 
-    for protected_path in protected_paths.iter() {
-        if path.starts_with(protected_path) {
-            return true;
+fn can_delete<P: AsRef<Path>>(path: P) -> Result<(), AccessCheckError> {
+    let path = path.as_ref();
+
+    // Check if path exists
+    if !path.exists() {
+        return Err(AccessCheckError::PathDoesNotExist);
+    }
+
+    // Check if it's a protected test path
+    if is_protected_path_test(path) {
+        return Err(AccessCheckError::ProtectedPath);
+    }
+
+    // Check if it's a system file
+    if is_system_file(path).map_err(AccessCheckError::IoError)? {
+        return Err(AccessCheckError::SystemFile);
+    }
+
+    // Special handling for directories
+    if path.is_dir() {
+        match std::fs::read_dir(path) {
+            Ok(read_dir) => {
+                if read_dir.count() > 0 {
+                    return Err(AccessCheckError::NonEmptyDirectory);
+                }
+            },
+            Err(e) => return Err(AccessCheckError::IoError(e)),
         }
     }
 
-    false
-}
+    // Check parent directory permissions
+    let parent = path.parent()
+        .ok_or(AccessCheckError::NoParentDirectory)?;
 
-#[cfg(target_os = "macos")]
-fn is_protected_path(path: &str) -> bool {
-    let protected_paths = [
-        "/System",
-        "/Applications",
-        "/usr",
-        "/bin",
-        "/Library",
-        "/__protected_test_path__",
-    ];
-
-    for protected_path in protected_paths.iter() {
-        if path.starts_with(protected_path) {
-            return true;
-        }
+    // Try to access parent directory with write permissions
+    match parent.access(AccessMode::WRITE) {
+        Ok(_) => (),
+        Err(e) => return Err(AccessCheckError::ParentDirAccessDenied(e)),
     }
 
-    false
-}
+    // Check if parent is a system directory
+    if is_system_file(parent).map_err(AccessCheckError::IoError)? {
+        return Err(AccessCheckError::SystemFile);
+    }
 
-#[cfg(not(any(target_os = "windows", target_os = "linux", target_os = "macos")))]
-fn is_protected_path(path: &str) -> bool {
-    // For other OSes, treat all paths as unprotected by default
-    false
+    // Check target file/directory permissions
+    match path.access(AccessMode::WRITE) {
+        Ok(_) => (),
+        Err(e) => return Err(AccessCheckError::TargetAccessDenied(e)),
+    }
+
+    Ok(())
 }
 
 /// Securely deletes a file or directory by overwriting its contents multiple times and then removing it.
@@ -447,8 +515,8 @@ fn is_protected_path(path: &str) -> bool {
 /// ```
 #[tauri::command]
 pub async fn safe_delete_file_or_dir(path: &str, passes: Option<u64>) -> Result<(), String> {
-    if is_protected_path(&path) {
-        return Err(format!("Refusing to delete system-protected path: {}", path));
+    if let Err(e) = can_delete(path){
+        return Err(e.to_string());
     }
     // TODO: Maybe add option to choose between methods for safe delete (e.g. zero-fill, one-fill, random-fill) currently used a method of first writing zeros then ones and then random stuff but idk tho
     let path = path.to_string();
@@ -1096,3 +1164,5 @@ mod tests_file_system_operation_commands {
         }
     }
 }
+
+
