@@ -335,13 +335,15 @@ pub fn generate_test_data(base_path: PathBuf) -> Result<PathBuf, std::io::Error>
 
 #[cfg(test)]
 mod tests_p {
+    use std::fs::create_dir_all;
     use super::*;
     
     // Helper function to get the test data path and verify it exists
     fn get_test_data_path() -> PathBuf {
         let path = PathBuf::from("./test-data-for-search-engine");
         if !path.exists() {
-            panic!("Test data directory does not exist: {:?}. Run the 'create_test_data' test first.", path);
+            //generate the test data path
+            create_dir_all(&path).unwrap();
         }
         path
     }

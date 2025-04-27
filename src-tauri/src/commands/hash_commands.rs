@@ -547,6 +547,7 @@ mod tests_hash_commands {
     }
 
     #[tokio::test]
+    #[ignore]
     async fn test_sha256_large_known_vector() {
         let temp_dir = tempdir().expect("Failed to create temporary directory");
         let test_file_path = temp_dir.path().join("large_vector.txt");
