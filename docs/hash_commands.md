@@ -21,7 +21,7 @@ useEffect(() => {
     const generateHash = async () => {
         try {
             const hash = await invoke("gen_hash_and_return_string", { path: "/path/to/file" });
-            console.log("Generated hash:", hash);
+            console.log("Generated hash and copied to clipboard:", hash);
         } catch (error) {
             console.error("Error generating hash:", error);
         }
