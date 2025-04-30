@@ -7,8 +7,12 @@ use std::fs;
 use std::fs::read_dir;
 use std::io::Write;
 use std::path::Path;
+use std::sync::{Arc, Mutex};
 use zip::ZipWriter;
 use zip::write::FileOptions;
+use crate::state::clipboard_data::ClipboardState;
+use crate::log_info;
+use crate::log_error;
 
 /// Opens a file at the given path and returns its contents as a string.
 /// Should only be used for text files.
@@ -534,8 +538,72 @@ pub async fn unzip(zip_paths: Vec<String>, destination_path: Option<String>) -> 
     Ok(())
 }
 
+/// Pastes the current contents of the clipboard to the specified location.
+/// If the clipboard contains a file or directory path, it will be copied or moved
+/// (depending on whether it was copied or cut) to the destination.
+/// If the clipboard contains text content, it will be saved as a text file.
+///
+/// # Arguments
+/// * `clipboard_state` - The application's clipboard state
+/// * `destination_path` - The destination path where the clipboard content will be pasted
+///
+/// # Returns
+/// * `Ok(())` - If the paste operation was successful
+/// * `Err(String)` - If there was an error during the paste operation
+///
+/// # Example
+/// ```rust
+/// let result = paste_from_clipboard(&clipboard_state, "/path/to/destination").await;
+/// match result {
+///     Ok(_) => println!("Content pasted successfully!"),
+///     Err(err) => println!("Error pasting content: {}", err),
+/// }
+/// ```
+#[tauri::command]
+pub async fn paste_from_clipboard(
+    clipboard_state: Arc<Mutex<ClipboardState>>,
+    destination_path: &str
+) -> Result<(), String> {
+    log_info!(format!("Attempting to paste clipboard content to: {}", destination_path).as_str());
+
+    let dest_path = Path::new(destination_path);
+
+    // Check if destination path exists and is a directory
+    if !dest_path.exists() {
+        log_error!(format!("Destination path does not exist: {}", destination_path).as_str());
+        return Err(format!("Destination path does not exist: {}", destination_path));
+    }
+
+    if !dest_path.is_dir() {
+        log_error!(format!("Destination path is not a directory: {}", destination_path).as_str());
+        return Err(format!("Destination path is not a directory: {}", destination_path));
+    }
+
+    let clipboard_state = clipboard_state.lock().unwrap();
+    // Check if clipboard has content
+    if !clipboard_state.has_content() {
+        log_error!("Paste operation failed: clipboard is empty");
+        return Err("Clipboard is empty".to_string());
+    }
+
+    log_info!("Clipboard has content, starting paste operation");
+
+    // Perform the paste operation
+    match clipboard_state.paste_to_location(dest_path) {
+        Ok(_) => {
+            log_info!("Successfully pasted clipboard content to destination");
+            Ok(())
+        },
+        Err(err) => {
+            log_error!(format!("Failed to paste clipboard content: {}", err).as_str());
+            Err(format!("Failed to paste clipboard content: {}", err))
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests_file_system_operation_commands {
+    use std::sync::{Arc, Mutex};
     use super::*;
     use tempfile::tempdir;
 
@@ -1046,4 +1114,249 @@ mod tests_file_system_operation_commands {
             "Extracted content 2 should match"
         );
     }
+
+    #[tokio::test]
+    async fn paste_from_clipboard_file_test() {
+        use crate::state::clipboard_data::{ClipboardState, ClipboardContent, ClipboardOperation};
+
+        // Create temporary source and destination directories
+        let source_dir = tempdir().expect("Failed to create source temporary directory");
+        let dest_dir = tempdir().expect("Failed to create destination temporary directory");
+
+        // Create a test file in the source directory
+        let test_file_path = source_dir.path().join("test_file.txt");
+        fs::write(&test_file_path, "Test content").expect("Failed to create test file");
+        assert!(test_file_path.exists(), "Test file should exist before copying");
+
+        // Set up clipboard state with the file path
+        let clipboard = ClipboardState::new_with_content(
+            ClipboardContent::FilePath(test_file_path.clone()),
+            ClipboardOperation::Copy
+        );
+
+        // Paste from clipboard to destination
+        let result = paste_from_clipboard(
+            Arc::new(Mutex::new(clipboard)),
+            dest_dir.path().to_str().unwrap()
+        ).await;
+
+        // Verify operation was successful
+        assert!(result.is_ok(), "Paste operation failed: {:?}", result);
+
+        // Check if file was copied to destination
+        let dest_file_path = dest_dir.path().join("test_file.txt");
+        assert!(dest_file_path.exists(), "File should exist at destination after paste");
+        assert!(test_file_path.exists(), "Source file should still exist after copy operation");
+
+        // Verify content was copied correctly
+        let content = fs::read_to_string(&dest_file_path).expect("Failed to read pasted file");
+        assert_eq!(content, "Test content", "File content should match");
+    }
+
+    #[tokio::test]
+    async fn paste_from_clipboard_cut_file_test() {
+        use crate::state::clipboard_data::{ClipboardState, ClipboardContent, ClipboardOperation};
+
+        // Create temporary source and destination directories
+        let source_dir = tempdir().expect("Failed to create source temporary directory");
+        let dest_dir = tempdir().expect("Failed to create destination temporary directory");
+
+        // Create a test file in the source directory
+        let test_file_path = source_dir.path().join("cut_test_file.txt");
+        fs::write(&test_file_path, "Cut file content").expect("Failed to create test file");
+        assert!(test_file_path.exists(), "Test file should exist before cutting");
+
+        // Set up clipboard state with the file path and cut operation
+        let clipboard = ClipboardState::new_with_content(
+            ClipboardContent::FilePath(test_file_path.clone()),
+            ClipboardOperation::Cut
+        );
+
+        // Paste from clipboard to destination
+        let result = paste_from_clipboard(
+            Arc::new(Mutex::new(clipboard)),
+            dest_dir.path().to_str().unwrap()
+        ).await;
+
+        // Verify operation was successful
+        assert!(result.is_ok(), "Paste operation failed: {:?}", result);
+
+        // Check if file was moved to destination
+        let dest_file_path = dest_dir.path().join("cut_test_file.txt");
+        assert!(dest_file_path.exists(), "File should exist at destination after paste");
+        assert!(!test_file_path.exists(), "Source file should no longer exist after cut operation");
+
+        // Verify content was moved correctly
+        let content = fs::read_to_string(&dest_file_path).expect("Failed to read pasted file");
+        assert_eq!(content, "Cut file content", "File content should match");
+    }
+
+    #[tokio::test]
+    async fn paste_from_clipboard_directory_test() {
+        use crate::state::clipboard_data::{ClipboardState, ClipboardContent, ClipboardOperation};
+
+        // Create temporary source and destination directories
+        let source_dir = tempdir().expect("Failed to create source temporary directory");
+        let dest_dir = tempdir().expect("Failed to create destination temporary directory");
+
+        // Create a test directory in the source directory
+        let test_dir_path = source_dir.path().join("test_dir");
+        fs::create_dir(&test_dir_path).expect("Failed to create test directory");
+
+        // Create a file in the test directory
+        let file_in_dir_path = test_dir_path.join("file_in_dir.txt");
+        fs::write(&file_in_dir_path, "Directory test content").expect("Failed to create file in directory");
+
+        // Set up clipboard state with the directory path
+        let clipboard = ClipboardState::new_with_content(
+            ClipboardContent::FolderPath(test_dir_path.clone()),
+            ClipboardOperation::Copy
+        );
+
+        // Paste from clipboard to destination
+        let result = paste_from_clipboard(
+            Arc::new(Mutex::new(clipboard)),
+            dest_dir.path().to_str().unwrap()
+        ).await;
+
+        // Verify operation was successful
+        assert!(result.is_ok(), "Paste operation failed: {:?}", result);
+
+        // Check if directory was copied to destination
+        let dest_dir_path = dest_dir.path().join("test_dir");
+        let dest_file_path = dest_dir_path.join("file_in_dir.txt");
+
+        assert!(dest_dir_path.exists() && dest_dir_path.is_dir(), "Directory should exist at destination after paste");
+        assert!(dest_file_path.exists(), "File in directory should exist at destination after paste");
+
+        // Verify content was copied correctly
+        let content = fs::read_to_string(&dest_file_path).expect("Failed to read pasted file");
+        assert_eq!(content, "Directory test content", "File content should match");
+    }
+
+    #[tokio::test]
+    async fn paste_from_clipboard_text_test() {
+        use crate::state::clipboard_data::{ClipboardState, ClipboardContent, ClipboardOperation};
+
+        // Create temporary destination directory
+        let dest_dir = tempdir().expect("Failed to create destination temporary directory");
+
+        // Set up clipboard state with text content
+        let clipboard = ClipboardState::new_with_content(
+            ClipboardContent::TextContent("Clipboard text content".to_string()),
+            ClipboardOperation::Copy
+        );
+
+        // Paste from clipboard to destination
+        let result = paste_from_clipboard(
+            Arc::new(Mutex::new(clipboard)),
+            dest_dir.path().to_str().unwrap()
+        ).await;
+
+        // Verify operation was successful
+        assert!(result.is_ok(), "Paste operation failed: {:?}", result);
+
+        // Check if text file was created in destination
+        let dest_file_path = dest_dir.path().join("clipboard_content.txt");
+        assert!(dest_file_path.exists(), "Text file should exist at destination after paste");
+
+        // Verify content was saved correctly
+        let content = fs::read_to_string(&dest_file_path).expect("Failed to read pasted file");
+        assert_eq!(content, "Clipboard text content", "Text content should match");
+    }
+
+    #[tokio::test]
+    async fn paste_from_clipboard_multiple_items_test() {
+        use crate::state::clipboard_data::{ClipboardState, ClipboardContent, ClipboardOperation};
+
+        // Create temporary source and destination directories
+        let source_dir = tempdir().expect("Failed to create source temporary directory");
+        let dest_dir = tempdir().expect("Failed to create destination temporary directory");
+
+        // Create test files in the source directory
+        let file1_path = source_dir.path().join("file1.txt");
+        let file2_path = source_dir.path().join("file2.txt");
+        fs::write(&file1_path, "File 1 content").expect("Failed to create file1");
+        fs::write(&file2_path, "File 2 content").expect("Failed to create file2");
+
+        // Set up clipboard state with multiple file paths
+        let paths = vec![file1_path.clone(), file2_path.clone()];
+        let clipboard = ClipboardState::new_with_content(
+            ClipboardContent::MultipleItems(paths),
+            ClipboardOperation::Copy
+        );
+
+        // Paste from clipboard to destination
+        let result = paste_from_clipboard(
+            Arc::new(Mutex::new(clipboard)),
+            dest_dir.path().to_str().unwrap()
+        ).await;
+
+        // Verify operation was successful
+        assert!(result.is_ok(), "Paste operation failed: {:?}", result);
+
+        // Check if files were copied to destination
+        let dest_file1_path = dest_dir.path().join("file1.txt");
+        let dest_file2_path = dest_dir.path().join("file2.txt");
+
+        assert!(dest_file1_path.exists(), "File1 should exist at destination after paste");
+        assert!(dest_file2_path.exists(), "File2 should exist at destination after paste");
+
+        // Verify content was copied correctly
+        let content1 = fs::read_to_string(&dest_file1_path).expect("Failed to read pasted file1");
+        let content2 = fs::read_to_string(&dest_file2_path).expect("Failed to read pasted file2");
+        assert_eq!(content1, "File 1 content", "File1 content should match");
+        assert_eq!(content2, "File 2 content", "File2 content should match");
+    }
+
+    #[tokio::test]
+    async fn paste_from_clipboard_empty_clipboard_test() {
+        use crate::state::clipboard_data::ClipboardState;
+
+        // Create temporary destination directory
+        let dest_dir = tempdir().expect("Failed to create destination temporary directory");
+
+        // Create empty clipboard state (default constructor creates empty clipboard)
+        let clipboard = ClipboardState::new();
+
+        // Try to paste from empty clipboard
+        let result = paste_from_clipboard(
+            Arc::new(Mutex::new(clipboard)),
+            dest_dir.path().to_str().unwrap()
+        ).await;
+
+        // Verify operation fails with appropriate error
+        assert!(result.is_err(), "Paste operation should fail with empty clipboard");
+        assert_eq!(result.unwrap_err(), "Clipboard is empty");
+    }
+
+    #[tokio::test]
+    async fn paste_from_clipboard_invalid_destination_test() {
+        use crate::state::clipboard_data::{ClipboardState, ClipboardContent, ClipboardOperation};
+
+        // Create temporary source directory
+        let source_dir = tempdir().expect("Failed to create source temporary directory");
+
+        // Create a test file in the source directory
+        let test_file_path = source_dir.path().join("test_file.txt");
+        fs::write(&test_file_path, "Test content").expect("Failed to create test file");
+
+        // Set up clipboard state with the file path
+        let clipboard = ClipboardState::new_with_content(
+            ClipboardContent::FilePath(test_file_path.clone()),
+            ClipboardOperation::Copy
+        );
+
+        // Try to paste to non-existent destination
+        let invalid_path = "/path/that/does/not/exist";
+        let result = paste_from_clipboard(
+            Arc::new(Mutex::new(clipboard)),
+            invalid_path
+        ).await;
+
+        // Verify operation fails with appropriate error
+        assert!(result.is_err(), "Paste operation should fail with invalid destination");
+        assert!(result.unwrap_err().contains("Destination path does not exist"));
+    }
 }
+

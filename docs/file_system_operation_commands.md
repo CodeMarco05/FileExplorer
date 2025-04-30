@@ -9,6 +9,7 @@
 - [Move a Dir or File to trash](#move_to_trash-endpoint)
 - [Zip a Dir or File](#zip-endpoint)
 - [Unzip a Dir or File](#unzip-endpoint)
+- [Paste from Clipboard](#paste_from_clipboard-endpoint)
 
 
 # `open_file` endpoint
@@ -35,6 +36,7 @@ useEffect(() => {
     fetchMetaData();
 }, []);
 ```
+
 # `create_file` endpoint
 
 ---
@@ -199,3 +201,35 @@ useEffect(() => {
     unzip();
 }, []);
 ```
+
+# `paste_from_clipboard` endpoint
+
+---
+## Parameters
+- `destination_path`: The path to the directory where the clipboard content will be pasted. This should be a string representing the absolute path.
+
+## Returns
+- Ok(): No content is returned. The function will paste the clipboard content to the specified destination.
+- Err(String) - An error message if the clipboard content cannot be pasted or other errors occur.
+
+## Description
+Pastes the current contents of the clipboard to the specified location. If the clipboard contains a file or directory path, it will be copied or moved (depending on whether it was copied or cut) to the destination. If the clipboard contains text content, it will be saved as a text file. The command supports both single and multiple items in the clipboard.
+
+## Example call
+```typescript jsx
+useEffect(() => {
+    const pasteContent = async () => {
+        try {
+            await invoke("paste_from_clipboard", { 
+                destination_path: "/path/to/destination" 
+            });
+            console.log("Content pasted successfully");
+        } catch (error) {
+            console.error("Error pasting content:", error);
+        }
+    };
+
+    pasteContent();
+}, []);
+```
+`

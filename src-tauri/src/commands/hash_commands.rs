@@ -1,5 +1,4 @@
 use crate::state::{SettingsState, ClipboardState};
-use crate::state::clipboard_data::ClipboardContent;
 use crc32fast::Hasher;
 use md5::{Digest as Md5Digest, Md5 as Md5Hasher};
 use serde::{Deserialize, Serialize};
@@ -288,6 +287,7 @@ mod tests_hash_commands {
     use std::io::Write;
     use std::sync::Arc;
     use tempfile::tempdir;
+    use crate::state::clipboard_data::ClipboardContent;
 
     // Testing: Helper function to create a test SettingsState
     fn create_test_settings_state() -> Arc<Mutex<SettingsState>> {
