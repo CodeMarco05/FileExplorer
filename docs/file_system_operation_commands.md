@@ -10,6 +10,9 @@
 - [Zip a Dir or File](#zip-endpoint)
 - [Unzip a Dir or File](#unzip-endpoint)
 - [Paste from Clipboard](#paste_from_clipboard-endpoint)
+- [Copy to Clipboard](#copy_to_clipboard-endpoint)
+- [Cut](#cut-endpoint)
+- [Cut Multiple Items](#cut_multiple_items-endpoint)
 
 
 # `open_file` endpoint
@@ -232,4 +235,94 @@ useEffect(() => {
     pasteContent();
 }, []);
 ```
-`
+
+# `copy_to_clipboard` endpoint
+
+---
+## Parameters
+- `path`: The path to the file or directory to be copied to clipboard. This should be a string representing the absolute path.
+
+## Returns
+- Ok(): No content is returned. The function will copy the path to both the application's internal clipboard and the system clipboard if possible.
+- Err(String) - An error message if the path cannot be copied or other errors occur.
+
+## Description
+Copies a file or directory path to the clipboard for later pasting. The path is made available in both the application's internal clipboard and the system clipboard when possible. This operation allows the user to later use the `paste_from_clipboard` command to copy or move the file to a new location.
+
+## Example call
+```typescript jsx
+useEffect(() => {
+    const copyToClipboard = async () => {
+        try {
+            await invoke("copy_to_clipboard", { 
+                path: "/path/to/file.txt" 
+            });
+            console.log("Path copied to clipboard successfully");
+        } catch (error) {
+            console.error("Error copying to clipboard:", error);
+        }
+    };
+
+    copyToClipboard();
+}, []);
+```
+
+# `cut` endpoint
+
+---
+## Parameters
+- `path`: The path to the file or directory to be cut. This should be a string representing the absolute path.
+
+## Returns
+- Ok(): No content is returned. The function will mark the path for cutting in the clipboard.
+- Err(String) - An error message if the path cannot be cut or other errors occur.
+
+## Description
+Marks a file or directory for cutting (moving) to the clipboard. When the `paste_from_clipboard` command is later used, the item will be moved to the destination location instead of being copied. This is the functional equivalent of the "Cut" operation in traditional file managers.
+
+## Example call
+```typescript jsx
+useEffect(() => {
+    const cutItem = async () => {
+        try {
+            await invoke("cut", { 
+                path: "/path/to/file.txt" 
+            });
+            console.log("Path marked for cutting");
+        } catch (error) {
+            console.error("Error cutting path:", error);
+        }
+    };
+    cutItem();
+}, []);
+ ````           
+            
+# `cut_multiple_items` endpoint
+
+---
+## Parameters
+- `paths`: The paths to the files or directories to be cut. This should be a Vector representing the absolute paths.
+
+## Returns
+- Ok(): No content is returned. The function will mark the paths for cutting in the clipboard.
+- Err(String) - An error message if the paths cannot be cut or other errors occur.
+
+## Description
+Marks files or directories for cutting (moving) to the clipboard. When the `paste_from_clipboard` command is later used, the item will be moved to the destination location instead of being copied. This is the functional equivalent of the "Cut" operation in traditional file managers.
+
+## Example call
+```typescript jsx
+useEffect(() => {
+    const cutItems = async () => {
+        try {
+            await invoke("cut_multiple_items", { 
+                paths: ["/path/to/file.txt", "/second_path/to_other/folder"] 
+            });
+            console.log("Paths marked for cutting");
+        } catch (error) {
+            console.error("Error cutting paths:", error);
+        }
+    };
+    cutItems();
+}, []);
+```
