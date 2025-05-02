@@ -13,6 +13,7 @@ pub enum ClipboardContent {
     FilePath(PathBuf),
     FolderPath(PathBuf),
     TextContent(String),
+    #[allow(dead_code)] // Keep for potential future use with binary files
     BinaryContent(Vec<u8>),
     MultipleItems(Vec<PathBuf>),
 }
@@ -43,7 +44,7 @@ impl Clipboard {
         if system_clipboard.is_none() {
             log_warn!("Failed to initialize system clipboard");
         }
-        
+
         Clipboard {
             content: ClipboardContent::None,
             operation: ClipboardOperation::None,
@@ -52,18 +53,20 @@ impl Clipboard {
     }
 }
 
-pub struct ClipboardState(pub Arc<Mutex<Clipboard>>);
+pub struct ClipboardState {
+    inner: Arc<Mutex<Clipboard>>,
+}
 
 impl ClipboardState {
     pub fn new() -> Self {
         log_info!("Creating new clipboard state");
-        Self(Arc::new(Mutex::new(Clipboard::new())))
+        Self { inner: Arc::new(Mutex::new(Clipboard::new())) }
     }
 
     pub fn copy_path(&self, path: &Path) -> io::Result<()> {
         log_info!(format!("Copying path: {}", path.to_string_lossy()).as_str());
         let path_str = path.to_string_lossy().to_string();
-        let mut clipboard = self.0.lock().unwrap();
+        let mut clipboard = self.inner.lock().unwrap();
 
         // Set in system clipboard
         if let Some(system_clipboard) = clipboard.system_clipboard.as_mut() {
@@ -80,14 +83,15 @@ impl ClipboardState {
             clipboard.content = ClipboardContent::FolderPath(path.to_path_buf());
             log_info!("Copied folder path to clipboard");
         }
-        
+
         clipboard.operation = ClipboardOperation::Copy;
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub fn copy_file_content(&self, path: &Path) -> io::Result<()> {
         log_info!(format!("Copying file content from: {}", path.to_string_lossy()).as_str());
-        
+
         if !path.is_file() {
             let err = io::Error::new(io::ErrorKind::InvalidInput, "Not a file");
             log_error!(format!("Failed to copy file content: {}", err).as_str());
@@ -101,8 +105,8 @@ impl ClipboardState {
                 return Err(e);
             }
         };
-        
-        let mut clipboard = self.0.lock().unwrap();
+
+        let mut clipboard = self.inner.lock().unwrap();
 
         // Try to set as text if it's valid UTF-8
         if let Ok(text) = String::from_utf8(content.clone()) {
@@ -126,7 +130,7 @@ impl ClipboardState {
 
     pub fn copy_text(&self, text: &str) -> io::Result<()> {
         log_info!("Copying text to clipboard");
-        let mut clipboard = self.0.lock().unwrap();
+        let mut clipboard = self.inner.lock().unwrap();
 
         // Set in system clipboard
         if let Some(system_clipboard) = clipboard.system_clipboard.as_mut() {
@@ -151,7 +155,7 @@ impl ClipboardState {
             return Err(e);
         }
         
-        self.0.lock().unwrap().operation = ClipboardOperation::Cut;
+        self.inner.lock().unwrap().operation = ClipboardOperation::Cut;
         log_info!("Item marked for cut operation");
         Ok(())
     }
@@ -159,7 +163,7 @@ impl ClipboardState {
     pub fn paste_to_location(&self, target_dir: &Path) -> io::Result<()> {
         log_info!(format!("Pasting to location: {}", target_dir.to_string_lossy()).as_str());
         
-        let mut clipboard = self.0.lock().unwrap();
+        let mut clipboard = self.inner.lock().unwrap();
         let content = clipboard.content.clone();
         let operation = clipboard.operation;
 
@@ -308,11 +312,11 @@ impl ClipboardState {
     }
 
     pub fn has_content(&self) -> bool {
-        !matches!(self.0.lock().unwrap().content, ClipboardContent::None)
+        !matches!(self.inner.lock().unwrap().content, ClipboardContent::None)
     }
     
     pub fn get_operation(&self) -> ClipboardOperation {
-        self.0.lock().unwrap().operation
+        self.inner.lock().unwrap().operation
     }
     
     pub fn copy_multiple_items(&self, paths: Vec<PathBuf>) -> io::Result<()> {
@@ -322,7 +326,7 @@ impl ClipboardState {
         }
         
         log_info!(format!("Copying multiple items ({} items)", paths.len()).as_str());
-        let mut clipboard = self.0.lock().unwrap();
+        let mut clipboard = self.inner.lock().unwrap();
         clipboard.content = ClipboardContent::MultipleItems(paths);
         clipboard.operation = ClipboardOperation::Copy;
         Ok(())
@@ -335,7 +339,7 @@ impl ClipboardState {
         }
         
         log_info!(format!("Cutting multiple items ({} items)", paths.len()).as_str());
-        let mut clipboard = self.0.lock().unwrap();
+        let mut clipboard = self.inner.lock().unwrap();
         clipboard.content = ClipboardContent::MultipleItems(paths);
         clipboard.operation = ClipboardOperation::Cut;
         Ok(())
@@ -347,12 +351,12 @@ impl ClipboardState {
         let mut clipboard = Clipboard::new();
         clipboard.content = content;
         clipboard.operation = operation;
-        Self(Arc::new(Mutex::new(clipboard)))
+        Self { inner: Arc::new(Mutex::new(clipboard)) }
     }
 
     #[cfg(test)]
     pub fn get_content(&self) -> ClipboardContent {
-        self.0.lock().unwrap().content.clone()
+        self.inner.lock().unwrap().content.clone()
     }
 }
 
@@ -703,3 +707,4 @@ mod tests_clipboard {
         }
     }
 }
+

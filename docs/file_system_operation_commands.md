@@ -7,12 +7,16 @@
 - [Create a Directory](#create_directory-endpoint)
 - [Rename a Dir or File](#rename-endpoint)
 - [Move a Dir or File to trash](#move_to_trash-endpoint)
+- [Copy a File or Directory](#copy_file_or_dir-endpoint)
 - [Zip a Dir or File](#zip-endpoint)
 - [Unzip a Dir or File](#unzip-endpoint)
 - [Paste from Clipboard](#paste_from_clipboard-endpoint)
 - [Copy to Clipboard](#copy_to_clipboard-endpoint)
+- [Copy File Content to Clipboard](#copy_file_content_to_clipboard-endpoint)
+- [Copy Multiple Items](#copy_multiple_items-endpoint)
 - [Cut](#cut-endpoint)
 - [Cut Multiple Items](#cut_multiple_items-endpoint)
+- [Get Clipboard Operation](#get_clipboard_operation-endpoint)
 
 
 # `open_file` endpoint
@@ -123,6 +127,39 @@ useEffect(() => {
 ## Returns
 - Ok(): No content is returned. The function will move the file or directory to the trash.
 - Err(String) - An error message if the file or directory cannot be moved to the trash or other errors occur.
+
+# `copy_file_or_dir` endpoint
+
+---
+## Parameters
+- `source_path`: The path to the source file or directory. This should be a string representing the absolute path.
+- `destination_path`: The path to the destination where the file or directory will be copied to. This should be a string representing the absolute path.
+
+## Returns
+- Ok(u64): The total size of copied files in bytes.
+- Err(String) - An error message if the copy operation fails or other errors occur.
+
+## Description
+Copies a file or directory from the source path to the destination path. If the source is a directory, it recursively copies all files and subdirectories. The function will not create any parent directories and will overwrite the destination if it already exists.
+
+## Example call
+```typescript jsx
+useEffect(() => {
+    const copyFileOrDir = async () => {
+        try {
+            const totalSize = await invoke("copy_file_or_dir", { 
+                source_path: "/path/to/source",
+                destination_path: "/path/to/destination" 
+            });
+            console.log(`Copy successful! Total size: ${totalSize} bytes`);
+        } catch (error) {
+            console.error("Error copying:", error);
+        }
+    };
+
+    copyFileOrDir();
+}, []);
+```
 
 # `zip` endpoint
 
@@ -267,6 +304,71 @@ useEffect(() => {
 }, []);
 ```
 
+# `copy_file_content_to_clipboard` endpoint
+
+---
+## Parameters
+- `path`: The path to the file whose content should be copied to clipboard. This should be a string representing the absolute path.
+
+## Returns
+- Ok(): No content is returned. The function will copy the file content to the clipboard.
+- Err(String) - An error message if the file content cannot be copied or other errors occur.
+
+## Description
+Copies a file's content (rather than its path) to the clipboard. If the file contains text, it will be available for pasting into text editors. If the file is binary, it will be stored in the application's clipboard. This operation works only with files, not directories.
+
+## Example call
+```typescript jsx
+useEffect(() => {
+    const copyFileContent = async () => {
+        try {
+            await invoke("copy_file_content_to_clipboard", { 
+                path: "/path/to/file.txt" 
+            });
+            console.log("File content copied to clipboard successfully");
+        } catch (error) {
+            console.error("Error copying file content:", error);
+        }
+    };
+
+    copyFileContent();
+}, []);
+```
+
+# `copy_multiple_items` endpoint
+
+---
+## Parameters
+- `paths`: An array of paths to files and/or directories to be copied to clipboard. Each path should be a string representing the absolute path.
+
+## Returns
+- Ok(): No content is returned. The function will copy all paths to the clipboard.
+- Err(String) - An error message if the paths cannot be copied or other errors occur.
+
+## Description
+Copies multiple files and/or directories to the clipboard for later pasting. This allows for a batch copy operation where multiple items can be pasted to a destination directory in a single operation. All items must exist for the operation to succeed.
+
+## Example call
+```typescript jsx
+useEffect(() => {
+    const copyMultipleItems = async () => {
+        try {
+            await invoke("copy_multiple_items", { 
+                paths: [
+                    "/path/to/file1.txt",
+                    "/path/to/folder1"
+                ] 
+            });
+            console.log("Multiple items copied to clipboard successfully");
+        } catch (error) {
+            console.error("Error copying multiple items:", error);
+        }
+    };
+
+    copyMultipleItems();
+}, []);
+```
+
 # `cut` endpoint
 
 ---
@@ -295,7 +397,7 @@ useEffect(() => {
     };
     cutItem();
 }, []);
- ````           
+```           
             
 # `cut_multiple_items` endpoint
 
@@ -324,5 +426,44 @@ useEffect(() => {
         }
     };
     cutItems();
+}, []);
+```
+
+# `get_clipboard_operation` endpoint
+
+---
+## Parameters
+None
+
+## Returns
+- Ok(ClipboardOperation) - The current operation set on the clipboard (Copy, Cut, or None).
+- Err(String) - An error message if there was an error retrieving the clipboard operation.
+
+## Description
+Gets the current clipboard operation (Copy, Cut, or None). This is useful for the UI to show appropriate indicators about the type of pending operation. This allows the application to provide visual feedback about what will happen when the user pastes content.
+
+## Example call
+```typescript jsx
+useEffect(() => {
+    const getClipboardOperation = async () => {
+        try {
+            const operation = await invoke("get_clipboard_operation");
+            
+            if (operation === "Copy") {
+                console.log("Clipboard has copy operation");
+                // Show copy indicator
+            } else if (operation === "Cut") {
+                console.log("Clipboard has cut operation");
+                // Show cut indicator
+            } else {
+                console.log("No clipboard operation");
+                // Hide indicators
+            }
+        } catch (error) {
+            console.error("Error getting clipboard operation:", error);
+        }
+    };
+
+    getClipboardOperation();
 }, []);
 ```
