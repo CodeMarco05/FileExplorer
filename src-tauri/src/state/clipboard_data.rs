@@ -3,6 +3,7 @@ use std::fs;
 use std::sync::{Arc, Mutex};
 use std::io;
 use arboard::Clipboard as SystemClipboard;
+use serde::{Deserialize, Serialize};
 use crate::log_info;
 use crate::log_error;
 use crate::log_warn;
@@ -18,7 +19,7 @@ pub enum ClipboardContent {
     MultipleItems(Vec<PathBuf>),
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ClipboardOperation {
     None,
     Copy,
@@ -165,7 +166,7 @@ impl ClipboardState {
         
         let mut clipboard = self.inner.lock().unwrap();
         let content = clipboard.content.clone();
-        let operation = clipboard.operation;
+        let operation = clipboard.operation.clone();
 
         match content {
             ClipboardContent::FilePath(source_path) => {
@@ -316,7 +317,7 @@ impl ClipboardState {
     }
     
     pub fn get_operation(&self) -> ClipboardOperation {
-        self.inner.lock().unwrap().operation
+        self.inner.lock().unwrap().operation.clone()
     }
     
     pub fn copy_multiple_items(&self, paths: Vec<PathBuf>) -> io::Result<()> {

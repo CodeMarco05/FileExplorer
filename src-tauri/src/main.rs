@@ -27,6 +27,9 @@ fn all_commands() -> fn(Invoke) -> bool {
         file_system_operation_commands::cut,
         file_system_operation_commands::cut_multiple_items,
         file_system_operation_commands::copy_to_clipboard,
+        file_system_operation_commands::copy_file_content_to_clipboard,
+        file_system_operation_commands::copy_multiple_items,
+        file_system_operation_commands::get_clipboard_operation,
 
         // Metadata commands
         meta_data_commands::get_meta_data_as_json,
