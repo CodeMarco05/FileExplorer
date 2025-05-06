@@ -336,6 +336,7 @@ pub fn generate_test_data(base_path: PathBuf) -> Result<PathBuf, std::io::Error>
 #[cfg(test)]
 mod tests_p {
     use std::fs::create_dir_all;
+    use crate::log_info;
     use super::*;
     
     // Helper function to get the test data path and verify it exists
@@ -397,7 +398,6 @@ mod tests_p {
     }
     
     #[test]
-    #[ignore]
     fn parallel_vs_sequential_indexing_test() {
         let test_path = get_test_data_path();
         
@@ -543,8 +543,12 @@ mod tests_p {
     #[test]
     #[cfg(feature = "generate-test-data")]
     fn create_test_data() {
+        log_info!("Started indexing");
         match generate_test_data(get_test_data_path()) {
-            Ok(path) => println!("Test data created at: {:?}", path),
+            Ok(path) => {
+                println!("Test data created at: {:?}", path);
+                log_info!("Test data indexed");
+            },
             Err(e) => panic!("Failed to generate test data: {}", e)
         }
     }

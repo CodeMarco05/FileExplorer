@@ -114,7 +114,12 @@ impl Logger {
         message: &str,
         line: u32,
     ) {
-        let timestamp = Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
+
+        let now = Local::now();
+        let norm = now.format("%Y-%m-%d %H:%M:%S").to_string();
+        let millis = now.timestamp_subsec_millis();
+        let timestamp = format!("{},{}", norm, format!("{:03}", millis));
+        //let timestamp = Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
 
         // Retrieve the logging state
         let logging_state = match get_logging_state(self.state.clone()) {
