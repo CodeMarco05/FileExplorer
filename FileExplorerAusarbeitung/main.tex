@@ -1,0 +1,33 @@
+\documentclass[]{naklatex} 
+\usepackage{lipsum}
+
+% Zitationseinstellungen
+\usepackage[backend=biber, style=apa]{biblatex}
+\ExecuteBibliographyOptions{sorting=nty}
+\addbibresource{quellen.bib}
+
+\title{FileExplorer}
+\author{Marco Brandt}
+\date{April 2025}
+
+\begin{document}
+
+    %% Deckblatt, Inhaltsverzeichnis und Co
+    \begin{frontmatter}
+        \deckblatt
+        \inhaltsverzeichnis
+    \end{frontmatter}
+
+    %% Kapitel
+    \begin{mainmatter}
+        \input{chapter/01_Introduction}
+        
+    \end{mainmatter}
+
+    \begin{backmatter}
+        \literaturverzeichnis
+        \abbildungsverzeichnis
+        \eidErklaerung
+    \end{backmatter}
+
+\end{document}
