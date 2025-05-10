@@ -1,0 +1,47 @@
+\section{Daten vom Backend zum Frontend}\label{sec:Daten vom Backend zum Frontend}
+
+Datenverarbeitung findet hauptsächlich im Backend statt. Dieses besteht im Framework Tauri \cite{tauri2025} aus Rust Code.
+Das Frontend kann Methoden aufrufen und über die asynchrone runntime können Daten an das Frontend geschickt werden. Dies ist recht
+einfach über Json oder sonst auch normalen primitiven Datentypen. Wenn selbst erstellte Objekte durchgereicht werden sollen,
+müssen Felder usw. im Frontend den selben Namen tragen und auch gleich Strukturiert sein. Für manche Datentypen gibt es jedoch in
+diversen Javascript Frame
+Das Frontend kann Methoden aufrufen und über die asynchrone runntime können Daten an das Frontend geschickt werden. Dies ist recht
+einfach über Json oder sonst auch normalen primitiven Datentypen. Wenn selbst erstellte Objekte durchgereicht werden sollen,
+müssen Felder usw. im Frontend den selben Namen tragen und auch gleich Strukturiert sein. Für manche Datentypen gibt es jedoch in
+diversen Javascript Frameworks keine passenden Datentypen. Somit ist es für folgendes Modell zum Beispiel besser dies als Json
+zurück zu geben.
+
+\begin{verbatim}
+  pub struct MetaData {
+    version: String,
+    abs_file_path_buf: PathBuf,
+    abs_file_path_for_settings_json: PathBuf,
+    pub abs_folder_path_buf_for_templates: PathBuf,
+    pub template_paths: Vec<PathBuf>,
+    all_volumes_with_information: Vec<VolumeInformation>,
+    current_running_os: String,
+    current_cpu_architecture: String,
+    user_home_dir: String
+}
+\end{verbatim}
+
+Das oben gezeigte \textit{struct} besitzt Typen, welche aus einem \textit{PathBuf} hervorgehen. Diese können in
+\textit{Typescript} nicht ohne weiteres realisiert werden. Ein Ansatz hierfür wäre das folgende Konstrukt, welches aber auch nicht
+automatisch generiert werden kann.
+
+\begin{verbatim}
+export interface VolumeInformation {
+  //Implementation for the VolumeInformation struct (Fields are not relevat for the example.)
+}
+export interface MetaData {
+  version: string;
+  abs_file_path_buf: string;
+  abs_file_path_for_settings_json: string;
+  abs_folder_path_buf_for_templates: string;
+  template_paths: string[]; // PathBufs become strings
+  all_volumes_with_information: VolumeInformation[];
+  current_running_os: string;
+  current_cpu_architecture: string;
+  user_home_dir: string;
+}
+\end{verbatim}

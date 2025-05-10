@@ -1,0 +1,53 @@
+% $ biblatex auxiliary file $
+% $ biblatex bbl format version 3.3 $
+% Do not modify the above lines!
+%
+% This is an auxiliary file used by the 'biblatex' package.
+% This file may safely be deleted. It will be recreated by
+% biber as required.
+%
+\begingroup
+\makeatletter
+\@ifundefined{ver@biblatex.sty}
+  {\@latex@error
+     {Missing 'biblatex' package}
+     {The bibliography requires the 'biblatex' package.}
+      \aftergroup\endinput}
+  {}
+\endgroup
+
+
+\refsection{0}
+  \datalist[entry]{nty/global//global/global/global}
+    \entry{tauri2025}{misc}{}{}
+      \name{author}{1}{}{%
+        {{hash=43e2bfe2252afe852d02e1c6d9a061a4}{%
+           family={{Tauri Project}},
+           familyi={T\bibinitperiod}}}%
+      }
+      \strng{namehash}{43e2bfe2252afe852d02e1c6d9a061a4}
+      \strng{fullhash}{43e2bfe2252afe852d02e1c6d9a061a4}
+      \strng{fullhashraw}{43e2bfe2252afe852d02e1c6d9a061a4}
+      \strng{bibnamehash}{43e2bfe2252afe852d02e1c6d9a061a4}
+      \strng{authorbibnamehash}{43e2bfe2252afe852d02e1c6d9a061a4}
+      \strng{authornamehash}{43e2bfe2252afe852d02e1c6d9a061a4}
+      \strng{authorfullhash}{43e2bfe2252afe852d02e1c6d9a061a4}
+      \strng{authorfullhashraw}{43e2bfe2252afe852d02e1c6d9a061a4}
+      \field{sortinit}{T}
+      \field{sortinithash}{9af77f0292593c26bde9a56e688eaee9}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{note}{Accessed: 2025-05-10}
+      \field{title}{Tauri - Build Smaller, Faster, and More Secure Desktop Applications with a Web Frontend}
+      \field{year}{2025}
+      \verb{urlraw}
+      \verb https://v2.tauri.app/
+      \endverb
+      \verb{url}
+      \verb https://v2.tauri.app/
+      \endverb
+    \endentry
+  \enddatalist
+\endrefsection
+\endinput
+
