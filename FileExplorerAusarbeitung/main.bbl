@@ -19,6 +19,30 @@
 
 \refsection{0}
   \datalist[entry]{nty/global//global/global/global}
+    \entry{connaticus01}{misc}{}{}
+      \name{author}{1}{}{%
+        {{hash=08ffa52489544ac11fde4ddbc1e095fe}{%
+           family={conaticus},
+           familyi={c\bibinitperiod}}}%
+      }
+      \strng{namehash}{08ffa52489544ac11fde4ddbc1e095fe}
+      \strng{fullhash}{08ffa52489544ac11fde4ddbc1e095fe}
+      \strng{fullhashraw}{08ffa52489544ac11fde4ddbc1e095fe}
+      \strng{bibnamehash}{08ffa52489544ac11fde4ddbc1e095fe}
+      \strng{authorbibnamehash}{08ffa52489544ac11fde4ddbc1e095fe}
+      \strng{authornamehash}{08ffa52489544ac11fde4ddbc1e095fe}
+      \strng{authorfullhash}{08ffa52489544ac11fde4ddbc1e095fe}
+      \strng{authorfullhashraw}{08ffa52489544ac11fde4ddbc1e095fe}
+      \field{sortinit}{c}
+      \field{sortinithash}{4d103a86280481745c9c897c925753c0}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{\url{https://www.youtube.com/watch?v=Z60f2g-COJY}}
+      \field{month}{6}
+      \field{note}{YouTube video}
+      \field{title}{I Made a FAST File Explorer (in Rust)}
+      \field{year}{2023}
+    \endentry
     \entry{tauri_state_management}{misc}{}{}
       \name{author}{1}{}{%
         {{hash=43e2bfe2252afe852d02e1c6d9a061a4}{%

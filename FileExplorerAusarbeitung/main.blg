@@ -1,15 +1,17 @@
 [0] Config.pm:308> INFO - This is Biber 2.20
 [0] Config.pm:311> INFO - Logfile is 'main.blg'
-[45] biber-darwin:340> INFO - === Sa Mai 10, 2025, 11:56:13
-[56] Biber.pm:420> INFO - Reading 'main.bcf'
-[100] Biber.pm:994> INFO - Found 2 citekeys in bib section 0
-[110] Biber.pm:4463> INFO - Processing section 0
-[117] Biber.pm:4654> INFO - Looking for bibtex file 'quellen.bib' for section 0
-[117] bibtex.pm:1713> INFO - LaTeX decoding ...
-[119] bibtex.pm:1519> INFO - Found BibTeX data source 'quellen.bib'
-[144] UCollate.pm:68> INFO - Overriding locale 'de-DE' defaults 'variable = shifted' with 'variable = non-ignorable'
-[144] UCollate.pm:68> INFO - Overriding locale 'de-DE' defaults 'normalization = NFD' with 'normalization = prenormalized'
-[144] Biber.pm:4283> INFO - Sorting list 'nty/global//global/global/global' of type 'entry' with template 'nty' and locale 'de-DE'
-[144] Biber.pm:4289> INFO - No sort tailoring available for locale 'de-DE'
-[148] bbl.pm:676> INFO - Writing 'main.bbl' with encoding 'UTF-8'
-[149] bbl.pm:779> INFO - Output to main.bbl
+[32] biber-darwin:340> INFO - === So Mai 11, 2025, 12:26:05
+[40] Biber.pm:420> INFO - Reading 'main.bcf'
+[76] Biber.pm:994> INFO - Found 3 citekeys in bib section 0
+[83] Biber.pm:4463> INFO - Processing section 0
+[89] Biber.pm:4654> INFO - Looking for bibtex file 'quellen.bib' for section 0
+[90] bibtex.pm:1713> INFO - LaTeX decoding ...
+[92] bibtex.pm:1519> INFO - Found BibTeX data source 'quellen.bib'
+[112] UCollate.pm:68> INFO - Overriding locale 'de-DE' defaults 'variable = shifted' with 'variable = non-ignorable'
+[112] UCollate.pm:68> INFO - Overriding locale 'de-DE' defaults 'normalization = NFD' with 'normalization = prenormalized'
+[112] Biber.pm:4283> INFO - Sorting list 'nty/global//global/global/global' of type 'entry' with template 'nty' and locale 'de-DE'
+[112] Biber.pm:4289> INFO - No sort tailoring available for locale 'de-DE'
+[119] bbl.pm:676> INFO - Writing 'main.bbl' with encoding 'UTF-8'
+[119] bbl.pm:779> INFO - Output to main.bbl
+[120] Biber.pm:131> WARN - legacy month field 'Juni' in entry 'connaticus01' is not an integer - this will probably not sort properly.
+[120] Biber.pm:133> INFO - WARNINGS: 1
