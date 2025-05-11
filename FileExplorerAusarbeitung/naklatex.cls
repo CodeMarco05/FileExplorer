@@ -24,7 +24,7 @@
 %\RequirePackage{courier}
 \RequirePackage[T1]{fontenc}                                                % Westeuropäisches Encoding & bessere Silbentrennung
 \RequirePackage{setspace}
-\setstretch{1.5}
+\setstretch{1.2}
 
 % Seitenränder
 \RequirePackage[left=2.5cm,right=1.5cm,top=2cm,bottom=2cm,footskip=1cm]{geometry}

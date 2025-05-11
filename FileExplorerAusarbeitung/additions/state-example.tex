@@ -1,0 +1,44 @@
+\subsection{State Beispiel} 
+\label{subsec:state-example}
+
+Rust Code:
+
+\begin{verbatim}
+use tauri::State;
+struct MyState(String);
+#[tauri::command]
+fn get_value(state: State<'_, MyState>) -> String {
+    state.0.clone()
+}
+fn main() {
+    tauri::Builder::default()
+        .manage(MyState("Hello from backend".to_string())) // Initial value
+        .invoke_handler(tauri::generate_handler![get_value])
+        .run(tauri::generate_context!())
+        .expect("error while running tauri application");
+}
+\end{verbatim}
+
+Frontend in Typescript
+
+\begin{verbatim}
+'use client';
+import { useEffect, useState } from 'react';
+import { invoke } from '@tauri-apps/api/tauri';
+export default function GetStateExample() {
+  const [value, setValue] = useState<string>('');
+  useEffect(() => {
+    async function fetchValue() {
+      const result = await invoke<string>('get_value');
+      setValue(result);
+    }
+    fetchValue();
+  }, []);
+  return (
+    <div>
+      <h1>Backend State</h1>
+      <p>{value}</p>
+    </div>
+  );
+}
+\end{verbatim}

@@ -3,13 +3,38 @@
 Datenverarbeitung findet hauptsächlich im Backend statt. Dieses besteht im Framework Tauri \cite{tauri2025} aus Rust Code.
 Das Frontend kann Methoden aufrufen und über die asynchrone runntime können Daten an das Frontend geschickt werden. Dies ist recht
 einfach über Json oder sonst auch normalen primitiven Datentypen. Wenn selbst erstellte Objekte durchgereicht werden sollen,
-müssen Felder usw. im Frontend den selben Namen tragen und auch gleich Strukturiert sein. Für manche Datentypen gibt es jedoch in
-diversen Javascript Frame
-Das Frontend kann Methoden aufrufen und über die asynchrone runntime können Daten an das Frontend geschickt werden. Dies ist recht
-einfach über Json oder sonst auch normalen primitiven Datentypen. Wenn selbst erstellte Objekte durchgereicht werden sollen,
-müssen Felder usw. im Frontend den selben Namen tragen und auch gleich Strukturiert sein. Für manche Datentypen gibt es jedoch in
-diversen Javascript Frameworks keine passenden Datentypen. Somit ist es für folgendes Modell zum Beispiel besser dies als Json
-zurück zu geben.
+müssen Felder usw. im Frontend den selben Namen tragen und auch gleich Strukturiert sein. Für das Projekt haben wir uns allerdings
+entschieden Daten ausschließlich über Json bereitzustellen. Dies bildet eine einheitliche Lösung und es werden keine Probleme
+auftreten, welche aufgrund von verschiedenen Datentypen auftauchen und fehlerhafter Konvertierung.
+
+Die Methoden, welche aus dem Frontend aufgerufen werden können, werden als \verb|#[tauri::command]| markiert und dem Builder für
+die Applikation hinzugefügt. Somit muss jeder Endpoint registriert werden. Dann jedoch können Methoden über ihren Namen aus dem
+Frontend aus erreicht werden. Wichtig ist, dass jede Methode automatisch \textit{asynchron} ist.
+
+
+\begin{verbatim}
+#[tauri::command]
+pub async fn open_file(path: &str) -> Result<String, String> {
+    let path_obj = Path::new(path);
+    // Check if path exists
+    if !path_obj.exists() {
+        return Err(format!(//TODO));
+    }
+    // Check if path is a file
+    if !path_obj.is_file() {
+        return Err(format!(//TODO));
+    }
+    // Read the file pfs
+    fs::read_to_string(path).map_err(|err| format!("Failed to read file: {}", err))
+}
+\end{verbatim}
+
+Es gibt noch weitere Optionen um Daten an das Frontend zu übergeben. Der sogenannte \textit{State} \cite{tauri_state_management}.
+Hierbei ist der Vorteil zentralisierte Datensammlung für das Frontend, welche über die gesamte Laufzeit der Applikation bestehen
+bleibt. Dieser State kann jederzeit vom Frontend aus aufgerufen werden. Ein Beispiel für State kann im Anhang gefunden werden
+\ref{subsec:state-example}.
+
+Bei dem File Explorer wird unter anderem folgende Datenstruktur über so einen State bereitgestellt.
 
 \begin{verbatim}
   pub struct MetaData {
@@ -25,23 +50,11 @@ zurück zu geben.
 }
 \end{verbatim}
 
-Das oben gezeigte \textit{struct} besitzt Typen, welche aus einem \textit{PathBuf} hervorgehen. Diese können in
-\textit{Typescript} nicht ohne weiteres realisiert werden. Ein Ansatz hierfür wäre das folgende Konstrukt, welches aber auch nicht
+
+Das oben gezeigt \verb|struct| ist zuständig für Basisinformationen, welche über die Applikation gespeichert werden oder über
+das System, auf welchem das Programm läuft. Dies wird zum Startup des Programmes initialisiert und kann mithilfe von Tauri für das
+Frontend bereit gestellt werden.
+Das oben gezeigte \verb|struct| besitzt Typen, welche aus einem \verb|PathBuf| hervorgehen. Diese können in
+\verb|Typescript| nicht ohne weiteres realisiert werden. Ein Ansatz hierfür wäre das folgende Konstrukt, welches aber auch nicht
 automatisch generiert werden kann.
 
-\begin{verbatim}
-export interface VolumeInformation {
-  //Implementation for the VolumeInformation struct (Fields are not relevat for the example.)
-}
-export interface MetaData {
-  version: string;
-  abs_file_path_buf: string;
-  abs_file_path_for_settings_json: string;
-  abs_folder_path_buf_for_templates: string;
-  template_paths: string[]; // PathBufs become strings
-  all_volumes_with_information: VolumeInformation[];
-  current_running_os: string;
-  current_cpu_architecture: string;
-  user_home_dir: string;
-}
-\end{verbatim}
