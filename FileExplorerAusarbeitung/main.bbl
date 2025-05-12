@@ -21,18 +21,18 @@
   \datalist[entry]{nty/global//global/global/global}
     \entry{connaticus01}{misc}{}{}
       \name{author}{1}{}{%
-        {{hash=08ffa52489544ac11fde4ddbc1e095fe}{%
-           family={conaticus},
+        {{hash=7fd031186ad7c6d1dd383a8679f87a61}{%
+           family={conaticus01},
            familyi={c\bibinitperiod}}}%
       }
-      \strng{namehash}{08ffa52489544ac11fde4ddbc1e095fe}
-      \strng{fullhash}{08ffa52489544ac11fde4ddbc1e095fe}
-      \strng{fullhashraw}{08ffa52489544ac11fde4ddbc1e095fe}
-      \strng{bibnamehash}{08ffa52489544ac11fde4ddbc1e095fe}
-      \strng{authorbibnamehash}{08ffa52489544ac11fde4ddbc1e095fe}
-      \strng{authornamehash}{08ffa52489544ac11fde4ddbc1e095fe}
-      \strng{authorfullhash}{08ffa52489544ac11fde4ddbc1e095fe}
-      \strng{authorfullhashraw}{08ffa52489544ac11fde4ddbc1e095fe}
+      \strng{namehash}{7fd031186ad7c6d1dd383a8679f87a61}
+      \strng{fullhash}{7fd031186ad7c6d1dd383a8679f87a61}
+      \strng{fullhashraw}{7fd031186ad7c6d1dd383a8679f87a61}
+      \strng{bibnamehash}{7fd031186ad7c6d1dd383a8679f87a61}
+      \strng{authorbibnamehash}{7fd031186ad7c6d1dd383a8679f87a61}
+      \strng{authornamehash}{7fd031186ad7c6d1dd383a8679f87a61}
+      \strng{authorfullhash}{7fd031186ad7c6d1dd383a8679f87a61}
+      \strng{authorfullhashraw}{7fd031186ad7c6d1dd383a8679f87a61}
       \field{sortinit}{c}
       \field{sortinithash}{4d103a86280481745c9c897c925753c0}
       \field{labelnamesource}{author}
