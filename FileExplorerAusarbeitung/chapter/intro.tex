@@ -1,29 +1,35 @@
-\section{Intro} 
-Software für den Eigengebrauch zu entwickeln – mit genau den Funktionen, die man sich über Jahre hinweg im Alltag
-gewünscht hat – stellt nicht nur eine kreative, sondern auch eine methodisch interessante Herangehensweise dar. Gerade im Bereich
-der Dateiverwaltung, der tagtäglich durch den Einsatz verschiedenster File Explorer geprägt ist, zeigt sich ein eklatantes
-Missverhältnis zwischen praktischer Nutzung und funktionaler Erfüllung. Während bestehende Systeme primär darauf ausgerichtet
-sind, Dateien anzuzeigen und ein minimales Interface zur Verfügung zu stellen, bleiben tiefere Anforderungen moderner Nutzerinnen
-und Nutzer häufig unberücksichtigt.
+\section{Einleitung}
 
-Die Möglichkeit, einen File Explorer von Grund auf neu zu denken, eröffnet daher nicht nur den Freiraum zur Integration lang
-ersehnter Features, sondern stellt auch ein erkenntnisreiches Experiment in der Human-Computer-Interaktion dar. Welche Strukturen,
-Navigationsprinzipien und Automatisierungsansätze fördern tatsächliche Effizienz? Wie kann ein Interface gestaltet sein, das nicht
-nur funktioniert, sondern den Nutzer aktiv unterstützt, informiert und entlastet? Eine solche Neuentwicklung ist nicht lediglich
-als technischer Fortschritt zu verstehen, sondern als reflektierter Beitrag zur Evolution alltäglicher Softwarewerkzeuge.
+Die Entwicklung von Software für den eigenen Gebrauch – ausgestattet mit exakt jenen Funktionen, die man sich über Jahre hinweg im
+Alltag gewünscht hat – stellt nicht nur eine kreative, sondern auch eine methodisch interessante Herangehensweise dar.
+Insbesondere im Bereich der Dateiverwaltung, der tagtäglich durch den Einsatz verschiedenster File Explorer geprägt ist, zeigt
+sich ein eklatantes Missverhältnis zwischen praktischer Nutzung und funktionaler Erfüllung. Bestehende Systeme sind oftmals primär
+darauf ausgerichtet, Dateien darzustellen und ein minimales Interface bereitzustellen; tiefergehende Anforderungen moderner
+Nutzerinnen und Nutzer bleiben hingegen häufig unbeachtet.
 
-Auf das Projekt sind wir aufmerksam geworden durch ein YouTube Video \cite{connaticus01}. In diesem erklärt er seine Idee von
-einem schnellen File Explorer
+Die Möglichkeit, einen File Explorer vollständig neu zu denken, eröffnet daher nicht nur den Freiraum zur Integration lang
+ersehnter Funktionen, sondern stellt zugleich ein erkenntnisreiches Experiment im Bereich der Mensch-Computer-Interaktion dar.
+Welche Strukturen, Navigationsprinzipien und Automatisierungsansätze begünstigen tatsächliche Effizienz? Wie lässt sich ein
+Interface gestalten, das nicht nur funktioniert, sondern die Nutzerin bzw. den Nutzer aktiv unterstützt, informiert und entlastet?
+Eine solche Neuentwicklung ist nicht bloß als technischer Fortschritt zu verstehen, sondern als reflektierter Beitrag zur
+Weiterentwicklung alltäglicher Softwarewerkzeuge.
 
-Wir haben dieses Projekt spezifisch ausgewählt, da wir den Ersteller selbst kontaktiert haben und er sich an unserem Interesse
-erfreut hat. Unserem Team direkt Features eingefallen, welche wir implementieren könnten, da wir selbst diese in einem Explorer
-gerne hätten. Zudem hatte der Ersteller tiefgehende Probleme bezüglich der Suchfunktion, welche er weitestgehend in seinem Video
-erklärt \cite{connaticus02}.
+Auf das zugrunde liegende Projekt wurden wir durch ein YouTube-Video aufmerksam \cite{connaticus01}, in dem der Autor seine Idee
+eines besonders schnellen File Explorers erläutert.
 
-Das Projekt basiert auf dem Framework Tauri \cite{tauri2025}. Dieses ermöglicht es Applikationen in zwei Module aufzuteilen.
-Zunächst einmal das user interface, welches mit den meisten gängigen frontend frameworks gebaut werden kann
-\cite{tauri_frontends}. Bei der Übernahme des Projektes war das Frontend nicht vom Ersteller fertiggestellt. Außerdem lag der
-Fokus eher auf der Funktion als auf der Optik. Nach Rücksprache mit dem Ersteller meinte er, dass ein schöneres Frontend auch in
-seinem Interesse läge. Somit haben wir uns für React für die UI-gestaltung entschieden. 
-Mit Tauri werden Verarbeitungsprozesse in Rust \cite{rust} geschrieben, welche 
+Wir haben dieses Projekt gezielt ausgewählt, da wir mit dem Ersteller persönlich Kontakt aufgenommen haben und dieser sich über
+unser Interesse erfreut zeigte. Bereits bei der ersten Auseinandersetzung mit dem Konzept kamen unserem Team konkrete
+Erweiterungsideen, da auch wir bestimmte Funktionen in einem Datei-Explorer vermissen. Zudem erläutert der Autor in einem weiteren
+Video detaillierte Schwierigkeiten im Zusammenhang mit der Suchfunktion \cite{connaticus02}, die wir als spannende Herausforderung
+empfanden.
 
+Das Projekt basiert auf dem Framework Tauri \cite{tauri2025}, das es ermöglicht, Anwendungen in zwei Module zu unterteilen:
+einerseits das User Interface, welches mit den gängigsten Frontend-Frameworks entwickelt werden kann \cite{tauri_frontends},
+andererseits die Verarbeitungsschicht, die in Rust \cite{rust} implementiert wird. Bei der Übernahme des Projekts war das Frontend
+noch nicht vollständig umgesetzt, da der ursprüngliche Fokus auf der Funktionalität lag und weniger auf einer ansprechenden
+Gestaltung. In der Rücksprache mit dem Projektinitiator bestätigte dieser, dass ein ästhetisch überzeugenderes Frontend auch in
+seinem Interesse liege. Aus diesem Grund entschieden wir uns für die Verwendung von React zur Gestaltung der Benutzeroberfläche.
+
+Durch den Einsatz von Rust für die Verarbeitungskomponenten profitieren wir von den bekannten Vorteilen dieser Programmiersprache:
+hoher Laufzeitgeschwindigkeit und effiziente Ressourcennutzung – vorausgesetzt, die Programmierung erfolgt entsprechend
+sorgfältig.
