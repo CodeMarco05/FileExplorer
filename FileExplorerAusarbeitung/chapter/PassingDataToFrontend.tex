@@ -1,60 +1,61 @@
 \section{Daten vom Backend zum Frontend}\label{sec:Daten vom Backend zum Frontend}
 
-Datenverarbeitung findet hauptsächlich im Backend statt. Dieses besteht im Framework Tauri \cite{tauri2025} aus Rust Code.
-Das Frontend kann Methoden aufrufen und über die asynchrone runntime können Daten an das Frontend geschickt werden. Dies ist recht
-einfach über Json oder sonst auch normalen primitiven Datentypen. Wenn selbst erstellte Objekte durchgereicht werden sollen,
-müssen Felder usw. im Frontend den selben Namen tragen und auch gleich Strukturiert sein. Für das Projekt haben wir uns allerdings
-entschieden Daten ausschließlich über Json bereitzustellen. Dies bildet eine einheitliche Lösung und es werden keine Probleme
-auftreten, welche aufgrund von verschiedenen Datentypen auftauchen und fehlerhafter Konvertierung.
+Die Datenverarbeitung findet hauptsächlich im Backend statt, das im Framework Tauri \cite{tauri2025} durch in Rust geschriebenen
+Code realisiert wird. Das Frontend kann Methoden aufrufen, und über die asynchrone Runtime können Daten an das Frontend
+übermittelt werden. Dies ist relativ unkompliziert über JSON oder auch mit primitiven Datentypen möglich. Wenn jedoch
+benutzerdefinierte Objekte übergeben werden sollen, müssen die Felder im Frontend dieselben Namen tragen und identisch
+strukturiert sein. Für dieses Projekt haben wir uns entschieden, sämtliche Daten ausschließlich über JSON bereitzustellen. Diese
+einheitliche Lösung verhindert Probleme im Zusammenhang mit unterschiedlichen Datentypen und fehleranfälligen Konvertierungen.
 
-Die Methoden, welche aus dem Frontend aufgerufen werden können, werden als \verb|#[tauri::command]| markiert und dem Builder für
-die Applikation hinzugefügt. Somit muss jeder Endpoint registriert werden. Dann jedoch können Methoden über ihren Namen aus dem
-Frontend aus erreicht werden. Wichtig ist, dass jede Methode automatisch \textit{asynchron} ist.
-
+Die Methoden, die vom Frontend aus aufgerufen werden können, werden mit dem Attribut \verb|#[tauri::command]| markiert und dem
+Application-Builder hinzugefügt. Jeder Endpoint muss explizit registriert werden. Danach können die Methoden über ihren Namen im
+Frontend aufgerufen werden. Wichtig ist dabei, dass alle Methoden standardmäßig \textit{asynchron} sind.
 
 \begin{verbatim}
 #[tauri::command]
 pub async fn open_file(path: &str) -> Result<String, String> {
-    let path_obj = Path::new(path);
-    // Check if path exists
-    if !path_obj.exists() {
-        return Err(format!(//TODO));
-    }
-    // Check if path is a file
-    if !path_obj.is_file() {
-        return Err(format!(//TODO));
-    }
-    // Read the file pfs
-    fs::read_to_string(path).map_err(|err| format!("Failed to read file: {}", err))
+let path_obj = Path::new(path);
+// Check if path exists
+if !path_obj.exists() {
+return Err(format!(//TODO));
+}
+// Check if path is a file
+if !path_obj.is_file() {
+return Err(format!(//TODO));
+}
+// Read the file
+fs::read_to_string(path).map_err(|err| format!("Failed to read file: {}", err))
 }
 \end{verbatim}
 
-Es gibt noch weitere Optionen um Daten an das Frontend zu übergeben. Der sogenannte \textit{State} \cite{tauri_state_management}.
-Hierbei ist der Vorteil zentralisierte Datensammlung für das Frontend, welche über die gesamte Laufzeit der Applikation bestehen
-bleibt. Dieser State kann jederzeit vom Frontend aus aufgerufen werden. Ein Beispiel für State kann im Anhang gefunden werden
-\ref{subsec:state-example}.
+Eine weitere Möglichkeit, um Daten an das Frontend zu übermitteln, bietet der sogenannte \textit{State}
+\cite{tauri_state_management}. Der Vorteil dieser Methode liegt in der zentralisierten Datenspeicherung für das Frontend, welche
+über die gesamte Laufzeit der Applikation hinweg bestehen bleibt. Der State kann jederzeit vom Frontend abgefragt werden. Ein
+Beispiel für die Verwendung des State ist im Anhang zu finden \ref{subsec:state-example}.
 
-Bei dem File Explorer wird unter anderem folgende Datenstruktur über so einen State bereitgestellt.
+Im File Explorer wird unter anderem folgende Datenstruktur über einen solchen State bereitgestellt:
+
+\newpage
 
 \begin{verbatim}
-  pub struct MetaData {
-    version: String,
-    abs_file_path_buf: PathBuf,
-    abs_file_path_for_settings_json: PathBuf,
-    pub abs_folder_path_buf_for_templates: PathBuf,
-    pub template_paths: Vec<PathBuf>,
-    all_volumes_with_information: Vec<VolumeInformation>,
-    current_running_os: String,
-    current_cpu_architecture: String,
-    user_home_dir: String
+pub struct MetaData {
+version: String,
+abs_file_path_buf: PathBuf,
+abs_file_path_for_settings_json: PathBuf,
+pub abs_folder_path_buf_for_templates: PathBuf,
+pub template_paths: Vec<PathBuf>,
+all_volumes_with_information: Vec<VolumeInformation>,
+current_running_os: String,
+current_cpu_architecture: String,
+user_home_dir: String
 }
 \end{verbatim}
 
+Das oben gezeigte \verb|struct| beinhaltet grundlegende Informationen, die entweder über die Applikation selbst gespeichert oder
+aus dem System, auf dem das Programm läuft, ausgelesen werden. Es wird beim Start der Anwendung initialisiert und mithilfe von
+Tauri dem Frontend zur Verfügung gestellt.
 
-Das oben gezeigt \verb|struct| ist zuständig für Basisinformationen, welche über die Applikation gespeichert werden oder über
-das System, auf welchem das Programm läuft. Dies wird zum Startup des Programmes initialisiert und kann mithilfe von Tauri für das
-Frontend bereit gestellt werden.
-Das oben gezeigte \verb|struct| besitzt Typen, welche aus einem \verb|PathBuf| hervorgehen. Diese können in
-\verb|Typescript| nicht ohne weiteres realisiert werden. Ein Ansatz hierfür wäre das folgende Konstrukt, welches aber auch nicht
-automatisch generiert werden kann.
+Da das \verb|struct| unter anderem den Typ \verb|PathBuf| verwendet, ergeben sich bei der Umsetzung in \verb|TypeScript| gewisse
+Einschränkungen. Diese Typen lassen sich dort nicht ohne Weiteres abbilden. Ein möglicher Ansatz zur Abbildung besteht im Einsatz
+einer äquivalenten Struktur, wobei jedoch zu beachten ist, dass diese nicht automatisch generiert werden kann.
 

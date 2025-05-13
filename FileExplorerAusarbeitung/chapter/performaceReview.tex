@@ -1,0 +1,16 @@
+\section{Performanceoptimierung}\label{sec:Performanceoptimierung}
+
+Performance-Optimierung ist ein zentraler Bestandteil der Softwareentwicklung, insbesondere bei Anwendungen, die regelmäßig mit
+großen Datenmengen oder komplexen Verarbeitungsprozessen arbeiten. Ziel ist es, Ressourcen wie CPU-Zeit, Arbeitsspeicher und I/O
+effizient zu nutzen, um die Reaktionsgeschwindigkeit und Gesamtleistung der Anwendung zu verbessern. Eine performante Anwendung
+trägt nicht nur zu einem besseren Nutzererlebnis bei, sondern reduziert auch Energieverbrauch und Hardwareanforderungen.
+
+Ein nützliches Werkzeug zur Performance-Analyse sind sogenannte \textit{Flamegraphs}. Diese visualisieren die Aufrufstruktur eines
+Programms und zeigen an, wie viel Zeit in welchen Funktionen verbracht wird. Die Breite eines Balkens in einem Flamegraph steht
+dabei für die Häufigkeit bzw. Dauer der Ausführung einer Funktion innerhalb eines Profiling-Zeitraums – je breiter der Balken,
+desto höher der Ressourcenverbrauch an dieser Stelle.
+
+Flamegraphs helfen, sogenannte Hotspots im Code zu identifizieren – also Funktionen oder Abschnitte, die besonders viel
+Rechenzeit beanspruchen. Durch gezielte Analyse dieser Bereiche können Engpässe erkannt und durch algorithmische Verbesserungen,
+Caching oder Parallelisierung gezielt behoben werden. Besonders hilfreich ist dabei die hierarchische Darstellung: Sie zeigt,
+welche Funktionen von welchen anderen aufgerufen wurden, was eine Ursachenanalyse erheblich erleichtert.
