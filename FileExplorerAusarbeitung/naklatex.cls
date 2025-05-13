@@ -2,7 +2,7 @@
 \ProvidesClass{naklatex}
 
 % Basisklasse laden
-\LoadClass[10pt,a4paper]{article}
+\LoadClass[12pt,a4paper]{article}
 
 % Pakete
 \RequirePackage[ngerman]{babel}                                             % deutsches Sprachpaket

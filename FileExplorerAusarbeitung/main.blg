@@ -1,17 +1,18 @@
 [0] Config.pm:308> INFO - This is Biber 2.20
 [0] Config.pm:311> INFO - Logfile is 'main.blg'
-[44] biber-darwin:340> INFO - === So Mai 11, 2025, 15:14:27
-[54] Biber.pm:420> INFO - Reading 'main.bcf'
-[98] Biber.pm:994> INFO - Found 3 citekeys in bib section 0
-[108] Biber.pm:4463> INFO - Processing section 0
-[114] Biber.pm:4654> INFO - Looking for bibtex file 'quellen.bib' for section 0
+[43] biber-darwin:340> INFO - === Di Mai 13, 2025, 15:08:14
+[53] Biber.pm:420> INFO - Reading 'main.bcf'
+[97] Biber.pm:994> INFO - Found 6 citekeys in bib section 0
+[107] Biber.pm:4463> INFO - Processing section 0
+[113] Biber.pm:4654> INFO - Looking for bibtex file 'quellen.bib' for section 0
 [115] bibtex.pm:1713> INFO - LaTeX decoding ...
 [118] bibtex.pm:1519> INFO - Found BibTeX data source 'quellen.bib'
-[143] UCollate.pm:68> INFO - Overriding locale 'de-DE' defaults 'variable = shifted' with 'variable = non-ignorable'
-[143] UCollate.pm:68> INFO - Overriding locale 'de-DE' defaults 'normalization = NFD' with 'normalization = prenormalized'
-[143] Biber.pm:4283> INFO - Sorting list 'nty/global//global/global/global' of type 'entry' with template 'nty' and locale 'de-DE'
-[143] Biber.pm:4289> INFO - No sort tailoring available for locale 'de-DE'
-[148] bbl.pm:676> INFO - Writing 'main.bbl' with encoding 'UTF-8'
-[149] bbl.pm:779> INFO - Output to main.bbl
-[149] Biber.pm:131> WARN - legacy month field 'Juni' in entry 'connaticus01' is not an integer - this will probably not sort properly.
-[149] Biber.pm:133> INFO - WARNINGS: 1
+[151] UCollate.pm:68> INFO - Overriding locale 'de-DE' defaults 'normalization = NFD' with 'normalization = prenormalized'
+[151] UCollate.pm:68> INFO - Overriding locale 'de-DE' defaults 'variable = shifted' with 'variable = non-ignorable'
+[151] Biber.pm:4283> INFO - Sorting list 'nty/global//global/global/global' of type 'entry' with template 'nty' and locale 'de-DE'
+[151] Biber.pm:4289> INFO - No sort tailoring available for locale 'de-DE'
+[157] bbl.pm:676> INFO - Writing 'main.bbl' with encoding 'UTF-8'
+[159] bbl.pm:779> INFO - Output to main.bbl
+[159] Biber.pm:131> WARN - legacy month field 'Juni' in entry 'connaticus01' is not an integer - this will probably not sort properly.
+[159] Biber.pm:131> WARN - legacy month field 'July' in entry 'connaticus02' is not an integer - this will probably not sort properly.
+[159] Biber.pm:133> INFO - WARNINGS: 2
