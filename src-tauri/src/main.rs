@@ -10,6 +10,7 @@ mod logging;
 
 use tauri::ipc::Invoke;
 use crate::commands::{file_system_operation_commands, meta_data_commands, volume_operations_commands, hash_commands, settings_commands, template_commands, search_engine_commands};
+use crate::search_engine::autocomplete_engine::test_with_real_world_data;
 
 fn all_commands() -> fn(Invoke) -> bool {
     tauri::generate_handler![
@@ -66,7 +67,7 @@ fn all_commands() -> fn(Invoke) -> bool {
 
 #[tokio::main]
 async fn main() {
-    log_info!("Starting application...");
+    /*log_info!("Starting application...");
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
@@ -76,5 +77,7 @@ async fn main() {
     let app = state::setup_app_state(app);
 
     app.run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .expect("error while running tauri application");*/
+    
+    test_with_real_world_data();
 }

@@ -166,9 +166,10 @@ fn efficient_string_match(
 }
 
 
-#[allow(dead_code)]
+
 /// Generates a test data directory structure with random folder and file names.
-/// Creates 20 folders with 20 subfolders each up to a depth of 5, and 20 files in each folder.
+/// Creates 20 folders with 20 subfolders each up to a depth of 5, and 20 files in each folder. 
+#[allow(dead_code)] 
 pub fn generate_test_data(base_path: PathBuf) -> Result<PathBuf, std::io::Error> {
     use rand::{thread_rng, Rng};
     use std::fs::{create_dir_all, File};

@@ -455,6 +455,260 @@ pub struct EngineStats {
     pub trie_size: usize,
 }
 
+
+pub fn test_with_real_world_data() {
+    log_info!("Testing autocomplete engine with real-world test data");
+
+    // Create a new engine with reasonable parameters
+    let mut engine = AutocompleteEngine::new(100, 20);
+
+    // Get real-world paths from test data
+    let paths = collect_test_paths(Some(8000));
+    log_info!(&format!("Collected {} test paths", paths.len()));
+
+    // Add all paths to the engine
+    let start = std::time::Instant::now();
+    for path in &paths {
+        engine.add_path(path);
+    }
+    let elapsed = start.elapsed();
+    log_info!(&format!("Added {} paths in {:?} ({:.2} paths/ms)",
+                 paths.len(), elapsed, paths.len() as f64 / elapsed.as_millis().max(1) as f64));
+
+    // Test different types of searches
+
+    // 1. Test prefix search
+    if let Some(first_path) = paths.first() {
+        // Extract a prefix from the first path
+        if let Some(last_sep) = first_path.rfind('/').or_else(|| first_path.rfind('\\')) {
+            let prefix = &first_path[..last_sep+1];
+
+            let prefix_start = std::time::Instant::now();
+            let prefix_results = engine.search(prefix);
+            let prefix_elapsed = prefix_start.elapsed();
+
+            log_info!(&format!("Prefix search for '{}' found {} results in {:?}",
+                         prefix, prefix_results.len(), prefix_elapsed));
+
+            assert!(!prefix_results.is_empty(), "Should find results for existing prefix");
+
+            // Log top results
+            for (i, (path, score)) in prefix_results.iter().take(3).enumerate() {
+                log_info!(&format!("  Result #{}: {} (score: {:.4})", i+1, path, score));
+            }
+        }
+    }
+
+    // 2. Test with specific filename components
+    // Extract some filename terms to search for from the data
+    let mut filename_terms = Vec::new();
+    for path in paths.iter().take(20) {
+        if let Some(filename) = path.split('/').last().or_else(|| path.split('\\').last()) {
+            if filename.len() >= 3 {
+                filename_terms.push(filename[..3].to_string());
+            }
+        }
+    }
+
+    // If we couldn't extract terms, use some defaults
+    if filename_terms.is_empty() {
+        filename_terms = vec!["app".to_string(), "doc".to_string(), "ima".to_string()];
+    }
+
+    // Test each extracted filename term
+    for term in &filename_terms {
+        let term_start = std::time::Instant::now();
+        let term_results = engine.search(term);
+        let term_elapsed = term_start.elapsed();
+
+        log_info!(&format!("Filename search for '{}' found {} results in {:?}",
+                     term, term_results.len(), term_elapsed));
+
+        // Log first result if any
+        if !term_results.is_empty() {
+            log_info!(&format!("  First result: {} (score: {:.4})",
+                         term_results[0].0, term_results[0].1));
+        }
+    }
+
+    // 3. Test with directory context
+    if paths.len() >= 2 {
+        // Use the directory part of the second path as context
+        let second_path = &paths[1];
+        if let Some(last_sep) = second_path.rfind('/').or_else(|| second_path.rfind('\\')) {
+            let dir_context = &second_path[..last_sep];
+
+            // Set the context
+            engine.set_current_directory(Some(dir_context.to_string()));
+
+            // Use a short, generic search term
+            let context_start = std::time::Instant::now();
+            let context_results = engine.search("file");
+            let context_elapsed = context_start.elapsed();
+
+            log_info!(&format!("Context search with directory '{}' found {} results in {:?}",
+                         dir_context, context_results.len(), context_elapsed));
+
+            // Check that results prioritize the context directory
+            if !context_results.is_empty() {
+                let top_result = &context_results[0].0;
+                log_info!(&format!("  Top result: {}", top_result));
+
+                // Count how many results are from the context directory
+                let context_matches = context_results.iter()
+                    .filter(|(path, _)| path.starts_with(dir_context))
+                    .count();
+
+                log_info!(&format!("  {} of {} results are from the context directory",
+                             context_matches, context_results.len()));
+            }
+
+            // Reset context for other tests
+            engine.set_current_directory(None);
+        }
+    }
+
+    // 4. Test with usage frequency and recency tracking
+    if !paths.is_empty() {
+        // Record usage for some paths to affect ranking
+        for i in 0..paths.len().min(5) {
+            engine.record_path_usage(&paths[i]);
+
+            // Record multiple usages for the first path
+            if i == 0 {
+                engine.record_path_usage(&paths[i]);
+                engine.record_path_usage(&paths[i]);
+            }
+        }
+
+        // Extract a common term to search for
+        let common_term = if let Some(path) = paths.first() {
+            if path.len() >= 3 {
+                &path[..3]
+            } else {
+                "fil"
+            }
+        } else {
+            "fil"
+        };
+
+        let freq_start = std::time::Instant::now();
+        let freq_results = engine.search(common_term);
+        let freq_elapsed = freq_start.elapsed();
+
+        log_info!(&format!("Frequency-aware search for '{}' found {} results in {:?}",
+                     common_term, freq_results.len(), freq_elapsed));
+
+        // Check that frequently used paths are prioritized
+        if !freq_results.is_empty() {
+            log_info!(&format!("  Top result: {} (score: {:.4})",
+                         freq_results[0].0, freq_results[0].1));
+
+            // The most frequently used path should be ranked high
+            let frequent_path_pos = freq_results.iter()
+                .position(|(path, _)| path == &paths[0]);
+
+            if let Some(pos) = frequent_path_pos {
+                log_info!(&format!("  Most frequently used path is at position {}", pos));
+                // Should be in the top results
+                assert!(pos < 3, "Frequently used path should be ranked high");
+            }
+        }
+    }
+
+    // 5. Test the engine's statistics
+    let stats = engine.get_stats();
+    log_info!(&format!("Engine stats - Cache size: {}, Trie size: {}",
+                 stats.cache_size, stats.trie_size));
+
+    assert!(stats.trie_size >= paths.len(),
+            "Trie should contain at least as many entries as paths");
+
+    // 6. Test cache behavior by repeating a search
+    if !paths.is_empty() {
+        let repeat_term = if let Some(path) = paths.first() {
+            if let Some(filename) = path.split('/').last().or_else(|| path.split('\\').last()) {
+                if filename.len() >= 3 {
+                    &filename[..3]
+                } else {
+                    "fil"
+                }
+            } else {
+                "fil"
+            }
+        } else {
+            "fil"
+        };
+
+        // First search to populate cache
+        let _ = engine.search(repeat_term);
+
+        // Second search should hit cache
+        let cache_start = std::time::Instant::now();
+        let cache_results = engine.search(repeat_term);
+        let cache_elapsed = cache_start.elapsed();
+
+        log_info!(&format!("Cached search for '{}' took {:?}", repeat_term, cache_elapsed));
+
+        // Cache hit should be very fast
+        assert!(!cache_results.is_empty(), "Cached search should return results");
+    }
+}
+fn collect_test_paths(limit: Option<usize>) -> Vec<String> {
+    let test_path = get_test_data_path();
+    let mut paths = Vec::new();
+
+    fn add_paths_recursively(dir: &std::path::Path, paths: &mut Vec<String>, limit: Option<usize>) {
+        if let Some(max) = limit {
+            if paths.len() >= max {
+                return;
+            }
+        }
+
+        if let Some(walker) = std::fs::read_dir(dir).ok() {
+            for entry in walker.filter_map(|e| e.ok()) {
+                let path = entry.path();
+                if let Some(path_str) = path.to_str() {
+                    paths.push(path_str.to_string());
+
+                    if let Some(max) = limit {
+                        if paths.len() >= max {
+                            return;
+                        }
+                    }
+                }
+
+                if path.is_dir() {
+                    add_paths_recursively(&path, paths, limit);
+                }
+            }
+        }
+    }
+
+    add_paths_recursively(&test_path, &mut paths, limit);
+
+    // If test data doesn't contain enough paths or doesn't exist,
+    // fall back to synthetic data with a warning
+    if paths.is_empty() {
+        log_warn!("No test data found, using synthetic data instead");
+        return (0..100).map(|i| format!("/path/to/file{}.txt", i)).collect();
+    }
+
+    paths
+}
+fn get_test_data_path() -> std::path::PathBuf {
+    let path = std::path::PathBuf::from("src-tauri/test-data-for-fuzzy-search");
+    //get the current path
+    let current_path = std::env::current_dir().unwrap();
+    //concat the path above to the current path
+    let path = current_path.join(path);
+    if !path.exists() {
+        log_warn!(&format!("Test data directory does not exist: {:?}. Run the 'create_test_data' test first.", path));
+        panic!("Test data directory does not exist: {:?}. Run the 'create_test_data' test first.", path);
+    }
+    path
+}
+
 #[cfg(test)]
 mod tests_autocomplete_engine {
     use super::*;
