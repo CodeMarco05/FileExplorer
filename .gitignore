@@ -67,6 +67,9 @@
 /config
 app.log
 
+# Ignore for test-data
+/src-tauri/test-data*/
+
 
 # for the latex stuff
 /FileExplorerAusarbeitung/*.acn
@@ -85,3 +88,7 @@ app.log
 /FileExplorerAusarbeitung/*.out
 /FileExplorerAusarbeitung/*.xml
 /FileExplorerAusarbeitung/*.toc
+/FileExplorerAusarbeitung/*.bbl
+/FileExplorerAusarbeitung/*.blg
+/FileExplorerAusarbeitung/*.pdf
+/FileExplorerAusarbeitung/*.gz
