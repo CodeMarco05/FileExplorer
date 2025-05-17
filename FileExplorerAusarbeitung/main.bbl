@@ -1,5 +1,5 @@
 % $ biblatex auxiliary file $
-% $ biblatex bbl format version 3.3 $
+% $ biblatex bbl format version 3.2 $
 % Do not modify the above lines!
 %
 % This is an auxiliary file used by the 'biblatex' package.
@@ -18,8 +18,8 @@
 
 
 \refsection{0}
-  \datalist[entry]{nty/global//global/global/global}
-    \entry{connaticus01}{misc}{}{}
+  \datalist[entry]{nty/global//global/global}
+    \entry{connaticus01}{misc}{}
       \name{author}{1}{}{%
         {{hash=7fd031186ad7c6d1dd383a8679f87a61}{%
            family={conaticus01},
@@ -27,12 +27,10 @@
       }
       \strng{namehash}{7fd031186ad7c6d1dd383a8679f87a61}
       \strng{fullhash}{7fd031186ad7c6d1dd383a8679f87a61}
-      \strng{fullhashraw}{7fd031186ad7c6d1dd383a8679f87a61}
       \strng{bibnamehash}{7fd031186ad7c6d1dd383a8679f87a61}
       \strng{authorbibnamehash}{7fd031186ad7c6d1dd383a8679f87a61}
       \strng{authornamehash}{7fd031186ad7c6d1dd383a8679f87a61}
       \strng{authorfullhash}{7fd031186ad7c6d1dd383a8679f87a61}
-      \strng{authorfullhashraw}{7fd031186ad7c6d1dd383a8679f87a61}
       \field{sortinit}{c}
       \field{sortinithash}{4d103a86280481745c9c897c925753c0}
       \field{labelnamesource}{author}
@@ -43,7 +41,7 @@
       \field{title}{I Made a FAST File Explorer (in Rust)}
       \field{year}{2023}
     \endentry
-    \entry{connaticus02}{misc}{}{}
+    \entry{connaticus02}{misc}{}
       \name{author}{1}{}{%
         {{hash=bb9c07d28f1a55cbac747443650480c5}{%
            family={conaticus02},
@@ -51,12 +49,10 @@
       }
       \strng{namehash}{bb9c07d28f1a55cbac747443650480c5}
       \strng{fullhash}{bb9c07d28f1a55cbac747443650480c5}
-      \strng{fullhashraw}{bb9c07d28f1a55cbac747443650480c5}
       \strng{bibnamehash}{bb9c07d28f1a55cbac747443650480c5}
       \strng{authorbibnamehash}{bb9c07d28f1a55cbac747443650480c5}
       \strng{authornamehash}{bb9c07d28f1a55cbac747443650480c5}
       \strng{authorfullhash}{bb9c07d28f1a55cbac747443650480c5}
-      \strng{authorfullhashraw}{bb9c07d28f1a55cbac747443650480c5}
       \field{sortinit}{c}
       \field{sortinithash}{4d103a86280481745c9c897c925753c0}
       \field{labelnamesource}{author}
@@ -67,7 +63,7 @@
       \field{title}{How I RUINED My Rust Project}
       \field{year}{2023}
     \endentry
-    \entry{tauri_frontends}{misc}{}{}
+    \entry{tauri_frontends}{misc}{}
       \name{author}{1}{}{%
         {{hash=43e2bfe2252afe852d02e1c6d9a061a4}{%
            family={{Tauri Project}},
@@ -75,12 +71,10 @@
       }
       \strng{namehash}{43e2bfe2252afe852d02e1c6d9a061a4}
       \strng{fullhash}{43e2bfe2252afe852d02e1c6d9a061a4}
-      \strng{fullhashraw}{43e2bfe2252afe852d02e1c6d9a061a4}
       \strng{bibnamehash}{43e2bfe2252afe852d02e1c6d9a061a4}
       \strng{authorbibnamehash}{43e2bfe2252afe852d02e1c6d9a061a4}
       \strng{authornamehash}{43e2bfe2252afe852d02e1c6d9a061a4}
       \strng{authorfullhash}{43e2bfe2252afe852d02e1c6d9a061a4}
-      \strng{authorfullhashraw}{43e2bfe2252afe852d02e1c6d9a061a4}
       \field{extraname}{1}
       \field{sortinit}{T}
       \field{sortinithash}{9af77f0292593c26bde9a56e688eaee9}
@@ -96,7 +90,7 @@
       \verb https://v2.tauri.app/start/frontend/
       \endverb
     \endentry
-    \entry{tauri_state_management}{misc}{}{}
+    \entry{tauri_state_management}{misc}{}
       \name{author}{1}{}{%
         {{hash=43e2bfe2252afe852d02e1c6d9a061a4}{%
            family={{Tauri Project}},
@@ -104,12 +98,10 @@
       }
       \strng{namehash}{43e2bfe2252afe852d02e1c6d9a061a4}
       \strng{fullhash}{43e2bfe2252afe852d02e1c6d9a061a4}
-      \strng{fullhashraw}{43e2bfe2252afe852d02e1c6d9a061a4}
       \strng{bibnamehash}{43e2bfe2252afe852d02e1c6d9a061a4}
       \strng{authorbibnamehash}{43e2bfe2252afe852d02e1c6d9a061a4}
       \strng{authornamehash}{43e2bfe2252afe852d02e1c6d9a061a4}
       \strng{authorfullhash}{43e2bfe2252afe852d02e1c6d9a061a4}
-      \strng{authorfullhashraw}{43e2bfe2252afe852d02e1c6d9a061a4}
       \field{extraname}{2}
       \field{sortinit}{T}
       \field{sortinithash}{9af77f0292593c26bde9a56e688eaee9}
@@ -125,7 +117,7 @@
       \verb https://v2.tauri.app/develop/state-management/
       \endverb
     \endentry
-    \entry{tauri2025}{misc}{}{}
+    \entry{tauri2025}{misc}{}
       \name{author}{1}{}{%
         {{hash=43e2bfe2252afe852d02e1c6d9a061a4}{%
            family={{Tauri Project}},
@@ -133,12 +125,10 @@
       }
       \strng{namehash}{43e2bfe2252afe852d02e1c6d9a061a4}
       \strng{fullhash}{43e2bfe2252afe852d02e1c6d9a061a4}
-      \strng{fullhashraw}{43e2bfe2252afe852d02e1c6d9a061a4}
       \strng{bibnamehash}{43e2bfe2252afe852d02e1c6d9a061a4}
       \strng{authorbibnamehash}{43e2bfe2252afe852d02e1c6d9a061a4}
       \strng{authornamehash}{43e2bfe2252afe852d02e1c6d9a061a4}
       \strng{authorfullhash}{43e2bfe2252afe852d02e1c6d9a061a4}
-      \strng{authorfullhashraw}{43e2bfe2252afe852d02e1c6d9a061a4}
       \field{extraname}{3}
       \field{sortinit}{T}
       \field{sortinithash}{9af77f0292593c26bde9a56e688eaee9}
@@ -154,7 +144,7 @@
       \verb https://v2.tauri.app/
       \endverb
     \endentry
-    \entry{rust}{misc}{}{}
+    \entry{rust}{misc}{}
       \name{author}{1}{}{%
         {{hash=f2e54b8f93a103c996d7a14c9b760682}{%
            family={Team},
@@ -164,12 +154,10 @@
       }
       \strng{namehash}{f2e54b8f93a103c996d7a14c9b760682}
       \strng{fullhash}{f2e54b8f93a103c996d7a14c9b760682}
-      \strng{fullhashraw}{f2e54b8f93a103c996d7a14c9b760682}
       \strng{bibnamehash}{f2e54b8f93a103c996d7a14c9b760682}
       \strng{authorbibnamehash}{f2e54b8f93a103c996d7a14c9b760682}
       \strng{authornamehash}{f2e54b8f93a103c996d7a14c9b760682}
       \strng{authorfullhash}{f2e54b8f93a103c996d7a14c9b760682}
-      \strng{authorfullhashraw}{f2e54b8f93a103c996d7a14c9b760682}
       \field{sortinit}{T}
       \field{sortinithash}{9af77f0292593c26bde9a56e688eaee9}
       \field{labelnamesource}{author}
