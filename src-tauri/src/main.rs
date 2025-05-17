@@ -10,7 +10,8 @@ mod logging;
 
 use tauri::ipc::Invoke;
 use crate::commands::{file_system_operation_commands, meta_data_commands, volume_operations_commands, hash_commands, settings_commands, template_commands, search_engine_commands};
-use crate::search_engine::autocomplete_engine::test_with_real_world_data;
+use crate::search_engine::autocomplete_engine::{test_big_search_for_profiling, test_with_all_test_data_paths, test_with_real_world_data};
+use crate::search_engine::fast_fuzzy_v2::test_with_generated_real_world_data;
 
 fn all_commands() -> fn(Invoke) -> bool {
     tauri::generate_handler![
@@ -78,6 +79,5 @@ async fn main() {
 
     app.run(tauri::generate_context!())
         .expect("error while running tauri application");*/
-    
-    test_with_real_world_data();
+    test_with_generated_real_world_data();
 }

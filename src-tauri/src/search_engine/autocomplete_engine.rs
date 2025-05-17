@@ -654,6 +654,224 @@ pub fn test_with_real_world_data() {
         assert!(!cache_results.is_empty(), "Cached search should return results");
     }
 }
+pub(crate) fn test_with_all_test_data_paths() {
+    log_info!("Testing autocomplete engine with all available test data paths");
+
+    // Create a new engine with reasonable parameters
+    let mut engine = AutocompleteEngine::new(100, 20);
+
+    // Get ALL available test paths (no limit)
+    let paths = collect_test_paths(None);
+    log_info!(&format!("Collected {} test paths", paths.len()));
+
+    // Add all paths to the engine
+    let start = std::time::Instant::now();
+    for path in &paths {
+        engine.add_path(path);
+    }
+    let elapsed = start.elapsed();
+    log_info!(&format!("Added {} paths in {:?} ({:.2} paths/ms)",
+                 paths.len(), elapsed, paths.len() as f64 / elapsed.as_millis().max(1) as f64));
+
+    // Test different types of searches
+
+    // 1. Test prefix search with various prefixes from the data
+    if !paths.is_empty() {
+        // Try to find common prefixes from the data
+        let mut prefixes = Vec::new();
+        for path in paths.iter().take(10) {
+            if let Some(last_sep) = path.rfind('/').or_else(|| path.rfind('\\')) {
+                prefixes.push(&path[..last_sep+1]);
+            }
+        }
+
+        for prefix in prefixes {
+            let prefix_start = std::time::Instant::now();
+            let prefix_results = engine.search(prefix);
+            let prefix_elapsed = prefix_start.elapsed();
+
+            log_info!(&format!("Prefix search for '{}' found {} results in {:?}",
+                         prefix, prefix_results.len(), prefix_elapsed));
+
+            assert!(!prefix_results.is_empty(), "Should find results for existing prefix");
+        }
+    }
+
+    // 2. Test with specific filename terms extracted from the data
+    let mut filename_terms = Vec::new();
+    for path in paths.iter().take(50) {
+        if let Some(filename) = path.split('/').last().or_else(|| path.split('\\').last()) {
+            if filename.len() >= 3 {
+                filename_terms.push(filename[..3].to_string());
+            }
+        }
+    }
+
+    // Test each extracted filename term
+    for term in filename_terms.iter().take(5) {
+        let term_start = std::time::Instant::now();
+        let term_results = engine.search(term);
+        let term_elapsed = term_start.elapsed();
+
+        log_info!(&format!("Filename search for '{}' found {} results in {:?}",
+                     term, term_results.len(), term_elapsed));
+
+        assert!(!term_results.is_empty(), "Should find results for extracted terms");
+    }
+
+    // 3. Test with directory context if we have enough paths
+    if paths.len() >= 2 {
+        // Find a directory with at least 2 files to use as context
+        let mut context_dir = None;
+        let mut dirs_with_counts = std::collections::HashMap::new();
+
+        for path in &paths {
+            if let Some(last_sep) = path.rfind('/').or_else(|| path.rfind('\\')) {
+                let dir = &path[..last_sep];
+                *dirs_with_counts.entry(dir.to_string()).or_insert(0) += 1;
+            }
+        }
+
+        // Find a directory with multiple files
+        for (dir, count) in dirs_with_counts {
+            if count >= 2 {
+                context_dir = Some(dir);
+                break;
+            }
+        }
+
+        if let Some(dir) = context_dir {
+            // Set the context
+            engine.set_current_directory(Some(dir.clone()));
+
+            // Use a generic search term
+            let context_start = std::time::Instant::now();
+            let context_results = engine.search("file");
+            let context_elapsed = context_start.elapsed();
+
+            log_info!(&format!("Context search with directory '{}' found {} results in {:?}",
+                         dir, context_results.len(), context_elapsed));
+
+            // Check if results prioritize the context directory
+            let context_matches = context_results.iter()
+                .filter(|(path, _)| path.starts_with(&dir))
+                .count();
+
+            log_info!(&format!("{} of {} results are from the context directory",
+                         context_matches, context_results.len()));
+
+            // Reset context
+            engine.set_current_directory(None);
+        }
+    }
+
+    // 4. Test with usage frequency and recency
+    if !paths.is_empty() {
+        // Record usage for some paths to affect ranking
+        for i in 0..paths.len().min(20) {
+            engine.record_path_usage(&paths[i]);
+
+            // Record multiple usages for the first few paths
+            if i < 5 {
+                for _ in 0..3 {
+                    engine.record_path_usage(&paths[i]);
+                }
+            }
+        }
+
+        // Wait a moment to create time difference for recency
+        std::thread::sleep(std::time::Duration::from_millis(10));
+
+        // Record more recent usage for a different set of paths
+        for i in 20..paths.len().min(30) {
+            engine.record_path_usage(&paths[i]);
+        }
+
+        // Extract a common term to search for
+        let common_term = if let Some(path) = paths.first() {
+            if path.len() >= 3 {
+                &path[..3]
+            } else {
+                "fil"
+            }
+        } else {
+            "fil"
+        };
+
+        let freq_start = std::time::Instant::now();
+        let freq_results = engine.search(common_term);
+        let freq_elapsed = freq_start.elapsed();
+
+        log_info!(&format!("Frequency-aware search for '{}' found {} results in {:?}",
+                     common_term, freq_results.len(), freq_elapsed));
+
+        assert!(!freq_results.is_empty(), "Should find results for frequency-aware search");
+    }
+
+    // 5. Test engine stats
+    let stats = engine.get_stats();
+    log_info!(&format!("Engine stats - Cache size: {}, Trie size: {}",
+                 stats.cache_size, stats.trie_size));
+
+    assert!(stats.trie_size >= paths.len(),
+            "Trie should contain at least as many entries as paths");
+
+    // 6. Test path removal (for a sample of paths)
+    if !paths.is_empty() {
+        let to_remove = paths.len().min(100);
+        log_info!(&format!("Testing removal of {} paths", to_remove));
+
+        let removal_start = std::time::Instant::now();
+        for i in 0..to_remove {
+            engine.remove_path(&paths[i]);
+        }
+        let removal_elapsed = removal_start.elapsed();
+
+        log_info!(&format!("Removed {} paths in {:?}", to_remove, removal_elapsed));
+
+        // Check that engine stats reflect the removals
+        let after_stats = engine.get_stats();
+        log_info!(&format!("Engine stats after removal - Cache size: {}, Trie size: {}",
+                     after_stats.cache_size, after_stats.trie_size));
+
+        assert!(after_stats.trie_size <= stats.trie_size - to_remove,
+                "Trie size should decrease after removals");
+    }
+}
+
+pub fn test_big_search_for_profiling() {
+    log_info!("Testing autocomplete engine with a single large search operation for profiling");
+
+    // Create a new engine with reasonable parameters
+    let mut engine = AutocompleteEngine::new(100, 50);
+
+    // Get ALL available test paths (no limit)
+    let paths = get_test_data_path();
+    //log_info!(&format!("Collected {} test paths", paths.len()));
+
+    // Add all paths to the engine
+    let start = std::time::Instant::now();
+    engine.add_paths_recursive(&paths.to_str().unwrap());
+    let elapsed = start.elapsed();
+    //log_info!(&format!("Added {} paths in {:?} ({:.2} paths/ms)",
+             //paths.len(), elapsed, paths.len() as f64 / elapsed.as_millis().max(1) as f64));
+
+    // Perform one big search
+    let search_term = "bananna"; // A common term likely to get many results
+    
+    let search_start = std::time::Instant::now();
+    let results = engine.search(search_term);
+    let search_elapsed = search_start.elapsed();
+    
+    log_info!(&format!("Search for '{}' found {} results in {:?}",
+             search_term, results.len(), search_elapsed));
+
+    // Log a few results as sanity check
+    for (i, (path, score)) in results.iter().take(5).enumerate() {
+        log_info!(&format!("Result #{}: {} (score: {:.4})", i+1, path, score));
+    }
+}
+
 fn collect_test_paths(limit: Option<usize>) -> Vec<String> {
     let test_path = get_test_data_path();
     let mut paths = Vec::new();

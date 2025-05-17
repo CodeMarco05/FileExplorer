@@ -1,9 +1,11 @@
 mod models;
-mod fast_fuzzy_v2;
+pub mod fast_fuzzy_v2;
 mod lru_cache_v2;
 mod path_cache_wrapper;
 mod art_v3;
 pub mod autocomplete_engine;
+
+
 
 use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
