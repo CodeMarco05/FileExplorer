@@ -27,7 +27,7 @@
 \setstretch{1.2}
 
 % Seitenränder
-\RequirePackage[left=2.5cm,right=1.5cm,top=2cm,bottom=2cm,footskip=1cm]{geometry}
+\RequirePackage[left=2.5cm,right=2cm,top=2cm,bottom=2cm,footskip=1cm]{geometry}
 
 % Seitenumbrüche per Section
 \RequirePackage{titlesec}
