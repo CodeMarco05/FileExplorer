@@ -6,7 +6,6 @@
 
 % Pakete
 \RequirePackage[ngerman]{babel}                                             % deutsches Sprachpaket
-\RequirePackage[ngerman=ngerman-x-latest]{hyphsubst}
 \RequirePackage[utf8]{inputenc}                                             % UTF8 Support
 \RequirePackage[babel, german=quotes]{csquotes}                             % Erweiterte Zitationsoptionen
 \RequirePackage{graphicx}                                                   % Ermöglicht das Einbinden von Bildern
@@ -23,6 +22,7 @@
 %\RequirePackage[scaled=0.9]{helvet}
 %\RequirePackage{courier}
 \RequirePackage[T1]{fontenc}                                                % Westeuropäisches Encoding & bessere Silbentrennung
+\RequirePackage{lmodern}
 \RequirePackage{setspace}
 \setstretch{1.2}
 
