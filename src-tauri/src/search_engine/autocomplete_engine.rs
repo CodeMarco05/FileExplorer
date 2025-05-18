@@ -934,6 +934,40 @@ mod tests_autocomplete_engine {
     use std::fs;
 
     #[test]
+    fn big_search_for_profiling_test() {
+        log_info!("Testing autocomplete engine with a single large search operation for profiling");
+
+        // Create a new engine with reasonable parameters
+        let mut engine = AutocompleteEngine::new(100, 50);
+
+        // Get ALL available test paths (no limit)
+        let paths = get_test_data_path();
+        //log_info!(&format!("Collected {} test paths", paths.len()));
+
+        // Add all paths to the engine
+        let start = std::time::Instant::now();
+        engine.add_paths_recursive(&paths.to_str().unwrap());
+        let elapsed = start.elapsed();
+        //log_info!(&format!("Added {} paths in {:?} ({:.2} paths/ms)",
+        //paths.len(), elapsed, paths.len() as f64 / elapsed.as_millis().max(1) as f64));
+
+        // Perform one big search
+        let search_term = "ban"; // A common term likely to get many results
+
+        let search_start = std::time::Instant::now();
+        let results = engine.search(search_term);
+        let search_elapsed = search_start.elapsed();
+
+        log_info!(&format!("Search for '{}' found {} results in {:?}",
+             search_term, results.len(), search_elapsed));
+
+        // Log a few results as sanity check
+        for (i, (path, score)) in results.iter().take(5).enumerate() {
+            log_info!(&format!("Result #{}: {} (score: {:.4})", i+1, path, score));
+        }
+    }
+
+    #[test]
     fn test_basic_search() {
         let mut engine = AutocompleteEngine::new(100, 10);
         
@@ -1382,7 +1416,7 @@ mod tests_autocomplete_engine {
     }
 
     #[test]
-    fn test_with_real_world_data() {
+    fn test_with_real_world_data_autocomplete_engine() {
         log_info!("Testing autocomplete engine with real-world test data");
 
         // Create a new engine with reasonable parameters

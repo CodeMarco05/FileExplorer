@@ -548,6 +548,49 @@ fn get_test_data_path() -> PathBuf {
     path
 }
 
+pub fn test_large_dataset_performance() {
+    // Get the test data directory
+    let test_path = get_test_data_path();
+
+    let start_time = Instant::now();
+    let mut matcher = PathMatcher::new();
+    let mut path_count = 0;
+
+    // Recursively add all paths from the test directory
+    fn add_paths_from_dir(dir: &std::path::Path, matcher: &mut PathMatcher, count: &mut usize) {
+        if let Some(walker) = std::fs::read_dir(dir).ok() {
+            for entry in walker.filter_map(|e| e.ok()) {
+                let path = entry.path();
+                if let Some(path_str) = path.to_str() {
+                    matcher.add_path(path_str);
+                    *count += 1;
+                }
+
+                if path.is_dir() {
+                    add_paths_from_dir(&path, matcher, count);
+                }
+            }
+        }
+    }
+
+    add_paths_from_dir(&test_path, &mut matcher, &mut path_count);
+    let indexing_time = start_time.elapsed();
+
+    log_info!(&format!("Indexed {} paths in {:.2?}", path_count, indexing_time));
+
+    // Test search performance with a variety of terms
+    let query_terms = ["file", "banana", "txt", "mp3", "orange", "apple", "e"];
+
+    for term in &query_terms {
+        let search_start = Instant::now();
+        let results = matcher.search(term, 50);
+        let search_time = search_start.elapsed();
+
+        log_info!(&format!("Search for '{}' found {} results in {:.2?}",
+                term, results.len(), search_time));
+    }
+}
+
 #[cfg(test)]
 mod tests_fast_fuzzy_v2 {
     use super::*;
