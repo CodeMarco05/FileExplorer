@@ -67,7 +67,7 @@
 /config
 app.log
 
-# Ignore for test-data
+# Ignore test data
 /src-tauri/test-data*/
 
 
@@ -88,7 +88,3 @@ app.log
 /FileExplorerAusarbeitung/*.out
 /FileExplorerAusarbeitung/*.xml
 /FileExplorerAusarbeitung/*.toc
-/FileExplorerAusarbeitung/*.bbl
-/FileExplorerAusarbeitung/*.blg
-/FileExplorerAusarbeitung/*.pdf
-/FileExplorerAusarbeitung/*.gz
