@@ -1,14 +1,14 @@
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesClass{naklatex}
+  \ProvidesClass{naklatex}
 
-% Basisklasse laden
-\LoadClass[12pt,a4paper]{article}
+  % Basisklasse laden
+    \LoadClass[11pt,a4paper]{article}
 
-% Pakete
-\RequirePackage[ngerman]{babel}                                             % deutsches Sprachpaket
-\RequirePackage[utf8]{inputenc}                                             % UTF8 Support
-\RequirePackage[babel, german=quotes]{csquotes}                             % Erweiterte Zitationsoptionen
-\RequirePackage{graphicx}                                                   % Ermöglicht das Einbinden von Bildern
+  % Pakete
+  \RequirePackage[ngerman]{babel}                                             % deutsches Sprachpaket
+  \RequirePackage[utf8]{inputenc}                                             % UTF8 Support
+  \RequirePackage[babel, german=quotes]{csquotes}                             % Erweiterte Zitationsoptionen
+  \RequirePackage{graphicx}                                                   % Ermöglicht das Einbinden von Bildern
 \RequirePackage[justification=RaggedRight, singlelinecheck=false]{caption}  % Ermöglicht das Beschriften von Bildern
 \RequirePackage{subcaption}                                                 % Ermöglicht eine Beschriftung für mehrere Bilder
 \RequirePackage{microtype}													% Tool zur verbesserten Textausrichtung in der generierten PDF, siehe http://www.khirevich.com/latex/microtype/
@@ -27,7 +27,7 @@
 \setstretch{1.2}
 
 % Seitenränder
-\RequirePackage[left=2.5cm,right=2cm,top=2cm,bottom=2cm,footskip=1cm]{geometry}
+\RequirePackage[left=2cm,right=2cm,top=2cm,bottom=2cm,footskip=1cm]{geometry}
 
 % Seitenumbrüche per Section
 \RequirePackage{titlesec}
