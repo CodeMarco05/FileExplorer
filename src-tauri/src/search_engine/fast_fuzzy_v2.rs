@@ -1,5 +1,8 @@
 use std::collections::{HashMap, HashSet};
+use std::path::PathBuf;
 use std::sync::Once;
+use std::time::Instant;
+use crate::{log_info, log_warn};
 
 type TrigramMap = HashMap<u32, Vec<u32>>;
 
@@ -442,6 +445,127 @@ impl PathMatcher {
         }
 
         variations
+    }
+}
+
+pub fn test_with_generated_real_world_data() {
+    // Get the test data path
+    let test_path = get_test_data_path();
+
+    log_info!(&format!("Loading test data from: {:?}", test_path));
+
+    // Now build our PathMatcher with the generated data
+    let mut matcher = PathMatcher::new();
+    let mut path_count = 0;
+
+    // Walk the directory and add all paths to the matcher
+    if let Some(walker) = std::fs::read_dir(&test_path).ok() {
+        for entry in walker.filter_map(|e| e.ok()) {
+            if let Some(path_str) = entry.path().to_str().map(|s| s.to_string()) {
+                matcher.add_path(&path_str);
+                path_count += 1;
+
+                // Also process subdirectories
+                if entry.path().is_dir() {
+                    if let Some(subwalker) = std::fs::read_dir(entry.path()).ok() {
+                        for subentry in subwalker.filter_map(|e| e.ok()) {
+                            if let Some(sub_path_str) = subentry.path().to_str().map(|s| s.to_string()) {
+                                matcher.add_path(&sub_path_str);
+                                path_count += 1;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    log_info!(&format!("Added {} paths to PathMatcher", path_count));
+    assert!(path_count > 0, "Should have indexed at least some paths");
+
+    // Test searching with some realistic terms
+    let search_terms = ["banana", "txt", "mp3", "apple"];
+
+    for term in &search_terms {
+        let start = Instant::now();
+        let results = matcher.search(term, 20);
+        let elapsed = start.elapsed();
+
+        log_info!(&format!("Search for '{}' found {} results in {:.2?}",
+                term, results.len(), elapsed));
+
+        // Print top 3 results (if any)
+        for (i, (path, score)) in results.iter().take(3).enumerate() {
+            log_info!(&format!("  Result #{}: {} (score: {:.4})", i+1, path, score));
+        }
+    }
+
+    // Test searching with some realistic terms including misspellings
+    let search_terms = ["bananna", "txt", "mp3", "aple"];  // misspelled banana and apple
+
+    for term in &search_terms {
+        let start = Instant::now();
+        let results = matcher.search(term, 20);
+        let elapsed = start.elapsed();
+
+        log_info!(&format!("Search for misspelled '{}' found {} results in {:.2?}",
+                term, results.len(), elapsed));
+
+        // Print top 3 results (if any)
+        for (i, (path, score)) in results.iter().take(3).enumerate() {
+            log_info!(&format!("  Result #{}: {} (score: {:.4})", i+1, path, score));
+        }
+    }
+}
+fn get_test_data_path() -> PathBuf {
+    let path = std::path::PathBuf::from("src-tauri/test-data-for-fuzzy-search");
+    if !path.exists() {
+        log_warn!(&format!("Test data directory does not exist: {:?}. Run the 'create_test_data' test first.", path));
+        panic!("Test data directory does not exist: {:?}. Run the 'create_test_data' test first.", path);
+    }
+    path
+}
+
+pub fn test_large_dataset_performance() {
+    // Get the test data directory
+    let test_path = get_test_data_path();
+
+    let start_time = Instant::now();
+    let mut matcher = PathMatcher::new();
+    let mut path_count = 0;
+
+    // Recursively add all paths from the test directory
+    fn add_paths_from_dir(dir: &std::path::Path, matcher: &mut PathMatcher, count: &mut usize) {
+        if let Some(walker) = std::fs::read_dir(dir).ok() {
+            for entry in walker.filter_map(|e| e.ok()) {
+                let path = entry.path();
+                if let Some(path_str) = path.to_str() {
+                    matcher.add_path(path_str);
+                    *count += 1;
+                }
+
+                if path.is_dir() {
+                    add_paths_from_dir(&path, matcher, count);
+                }
+            }
+        }
+    }
+
+    add_paths_from_dir(&test_path, &mut matcher, &mut path_count);
+    let indexing_time = start_time.elapsed();
+
+    log_info!(&format!("Indexed {} paths in {:.2?}", path_count, indexing_time));
+
+    // Test search performance with a variety of terms
+    let query_terms = ["file", "banana", "txt", "mp3", "orange", "apple", "e"];
+
+    for term in &query_terms {
+        let search_start = Instant::now();
+        let results = matcher.search(term, 50);
+        let search_time = search_start.elapsed();
+
+        log_info!(&format!("Search for '{}' found {} results in {:.2?}",
+                term, results.len(), search_time));
     }
 }
 
