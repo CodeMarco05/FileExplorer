@@ -77,6 +77,8 @@ app.log
 /FileExplorerAusarbeitung/*.alg
 /FileExplorerAusarbeitung/*.aux
 /FileExplorerAusarbeitung/*.bcf
+/FileExplorerAusarbeitung/*.bbl
+/FileExplorerAusarbeitung/*.blg
 /FileExplorerAusarbeitung/*.fdb_latexmk
 /FileExplorerAusarbeitung/*.fls
 /FileExplorerAusarbeitung/*.glg
@@ -88,3 +90,5 @@ app.log
 /FileExplorerAusarbeitung/*.out
 /FileExplorerAusarbeitung/*.xml
 /FileExplorerAusarbeitung/*.toc
+/FileExplorerAusarbeitung/*.gz
+/FileExplorerAusarbeitung/*.pdf

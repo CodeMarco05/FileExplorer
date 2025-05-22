@@ -1,21 +1,43 @@
 \section{Search-Algorithmus}
+
+Der ursprüngliche Algorithmus durchlief das Dateisystem vor dem Start der Applikation und lud dieses in einen Cache, der während
+der Nutzung stets aktuell gehalten wurde. Dieses Konzept erlaubte ein Vorladen der Dateinamen, erhöhte allerdings erheblich den
+Ressourcenbedarf der Anwendung. Eine mögliche Optimierung wäre gewesen, gezielt einzelne Unterverzeichnisse anstelle des gesamten
+Dateisystems gleichzeitig zu laden. Die tatsächliche Umsetzung sah jedoch einen initialen Ladevorgang vor, gefolgt von
+kontinuierlichen Aktualisierungen während der Laufzeit. Das Speichern dieser Cache-Datei erforderte zusätzlichen Speicherplatz
+sowie erheblichen Aufwand, insbesondere wenn Änderungen am Dateisystem vorgenommen wurden, während der Explorer nicht aktiv war.
+In Abstimmung mit dem Entwickler wurde dieser Ansatz überarbeitet und durch eine alternative Lösung ersetzt, welche im Folgenden
+näher erläutert wird. 
+
 \subsection{Motivation}
-Eine Json Datei als Cache ist Müll.
 
-Die in diesem Projekt implementierte Suchmaschine stellt eine alternative Lösung für die Dateisuche in großen Verzeichnissen dar. Im folgendem wird die Architektur dieser Maschine erläutert, angefangen bei den Frontend-Endpunkten bis hin zu den grundlegenden Datenstrukturen, die für Performanz und Präzision sorgen.
-\subsection{Architektonischer Aufbau}
-Die Suchmaschine ist nach einem mehrschichtigen Modell aufgebaut, das Modularität, Erweitbarkeit und Leistungsoptimierung der einzelnen Fragmente gewährleistet.
+Die in diesem Projekt implementierte Suchmaschine stellt eine alternative Lösung für die Dateisuche in großen Verzeichnissen dar.
+Im folgendem wird die Architektur dieser Maschine erläutert, angefangen bei den Frontend-Endpunkten bis hin zu den grundlegenden
+Datenstrukturen, die für Performanz und Präzision sorgen. 
 
-Die Interaktion mit der Suchmaschine läuft über \verb|Tauri:Commands| Enpunkte ab, die in \verb|search_engine_commands.rs| implementiert sind. Diese bieten dem Frontend die Möglichkeit, nach Eingaben zu suchen, Vezeichnisse zu indezieren und zu entfernen und Statusinformationen der Maschine abzufragen. Die wichtigsten Endpunkte sind:
-\begin{itemize}
-	\item \textbf{\textit{search}}: Führe eine Suche durch
-	\item \textbf{\textit{search\_with\_extension}}: Suche mit Fokus auf bestimmte Dateierweiterungen
-	\item \textbf{\textit{add\_paths\_recursive}}: Indiziert ein Verzeichnis rekursiv
-	\item \textbf{\textit{remove\_paths\_recusrive}}: Entfernt ein Verzeichnis rekursiv
-	\item \textbf{\textit{get\_search\_engine\_info}}: Liefert Statusinformationen der Suchmaschine
+\subsection{Architektonischer Aufbau} Die Suchmaschine ist nach einem
+mehrschichtigen Modell aufgebaut, das Modularität, Erweitbarkeit und Leistungsoptimierung der einzelnen Fragmente gewährleistet.
+
+Die Interaktion mit der Suchmaschine läuft über \verb|Tauri:Commands| Enpunkte ab, die in \newline \verb|search_engine_commands.rs|
+implementiert sind. Diese bieten dem Frontend die Möglichkeit, nach Eingaben zu suchen, Vezeichnisse zu indezieren und zu
+entfernen und Statusinformationen der Maschine abzufragen. Die wichtigsten Endpunkte sind: 
+
+\begin{itemize} 
+  \item \textbf{\textit{search}}: Führe eine Suche durch 
+
+  \item \textbf{\textit{search\_with\_extension}}: Suche mit Fokus auf bestimmte Dateierweiterungen 
+
+  \item \textbf{\textit{add\_paths\_recursive}}: Indiziert ein Verzeichnis rekursiv 
+
+  \item \textbf{\textit{remove\_paths\_recusrive}}: Entfernt ein Verzeichnis rekursiv 
+
+  \item \textbf{\textit{get\_search\_engine\_info}}: Liefert Statusinformationen der Suchmaschine 
 \end{itemize}
 
-Die SearchEngineState-Struktur in \verb|searchengine_data.rs| dient als zentraler State (abschnitt marco) für die Suche. Ähnlich wie bisher besprochene States handelt es sich auch hier um ein thread-sicheren \verb|Arc<Mutex<>>| für die geteilte Zustandsverwaltung. Zum einen verwaltet dieser Informationsdaten:
+Die SearchEngineState-Struktur in \verb|searchengine_data.rs| dient als zentraler State (abschnitt marco) für die Suche. Ähnlich
+wie bisher besprochene States handelt es sich auch hier um ein thread-sicheren \verb|Arc<Mutex<>>| für die geteilte
+Zustandsverwaltung. Zum einen verwaltet dieser Informationsdaten:
+
 \begin{itemize}
 	\item Den aktuellen Status (Idle, Indexing, Searching, Cancelled und Failed)
 	\item Fortschrittsmetriken bei der Indizierung
@@ -24,78 +46,165 @@ Die SearchEngineState-Struktur in \verb|searchengine_data.rs| dient als zentrale
 \end{itemize}
 und zum anderen die darunter liegende \verb|AutocompleteEngine|.
 
-Die eigentliche Such- und Indexierungslogik ist in der \verb|AutocompleteEngine| gekapselt, welche als übergeordnete Struktur die verschiedenen Komponenten der Suchmaschine koordiniert. Die Engine kombiniert mehrere spezialisierte Algorithmen und Datenstrukturen, um eine performante und flexible Suche zu ermöglichen.
+Die eigentliche Such- und Indexierungslogik ist in der \verb|AutocompleteEngine| gekapselt, welche als übergeordnete Struktur die
+verschiedenen Komponenten der Suchmaschine koordiniert. Die Engine kombiniert mehrere spezialisierte Algorithmen und
+Datenstrukturen, um eine performante und flexible Suche zu ermöglichen.
 
 \subsection{Datenstrukturen und Komponenten im Detail}
 
-\subsubsection{Adaptiver Radix Trie (ART)}
-Das Herzstück der Suchmaschine bildet der \textbf{Adaptive Radix Trie (ART)} \verb|(`art_v4.rs`)|, der für die Organisation und effiziente Suche sämtlicher indizierter Pfade zuständig ist. Der ART ist eine baumbasierte Datenstruktur, die speziell für Präfix- und Teilkomponentensuche in großen Mengen von Pfad-Strings optimiert wurde. Im Gegensatz zu klassischen Trie-Implementierungen, die für jeden Buchstaben einen eigenen Knoten anlegen, verwendet der ART eine dynamische Anpassung der Knotengröße und eine Komprimierung von Pfadabschnitten, um Speicherplatz zu sparen und die Zugriffszeiten zu minimieren.
+\subsubsection{Adaptiver Radix Trie (ART)} Das Herzstück der Suchmaschine bildet der \textbf{Adaptive Radix Trie (ART)}
+\verb|(`art_v4.rs`)|, der für die Organisation und effiziente Suche sämtlicher indizierter Pfade zuständig ist. Der ART ist eine
+baumbasierte Datenstruktur, die speziell für Präfix- und Teilkomponentensuche in großen Mengen von Pfad-Strings optimiert wurde.
+Im Gegensatz zu klassischen Trie-Implementierungen, die für jeden Buchstaben einen eigenen Knoten anlegen, verwendet der ART eine
+dynamische Anpassung der Knotengröße und eine Komprimierung von Pfadabschnitten, um Speicherplatz zu sparen und die Zugriffszeiten
+zu minimieren.
 
-\begin{itemize}
-	\item \textbf{Einfügen:} Jeder zu indizierende Pfad wird Zeichen für Zeichen als Sequenz in den Baum eingefügt. Bereits existierende Präfixe werden gemeinsam genutzt, was insbesondere bei vielen gemeinsamen Verzeichnissen für hohe Effizienz sorgt.
-	\item \textbf{Präfixsuche:} Suchen nach einem bestimmten Präfix (wie z.B. einem Verzeichnisnamen oder den ersten Buchstaben eines Dateinamens) werden extrem schnell ausgeführt, da die Baumstruktur direkt bis zum gesuchten Präfix navigiert und von dort alle relevanten Endpunkte (vollständige Pfade) extrahiert werden können.
-	\item \textbf{Teilkomponentensuche:} Über eine Erweiterung des klassischen Trie-Verfahrens kann der ART auch nach Teilstücken eines Pfades oder nach Komponenten innerhalb eines Pfades suchen. Das ist besonders nützlich, um auch Treffer zu finden, wenn der Nutzer nur einen Teil der Datei- oder Verzeichnisstruktur kennt. Dies ist allerdings nicht performant, weshalb die eigentliche Suche nicht darauf basiert.
-	\item \textbf{Löschen und Aktualisieren:} Pfade können effizient entfernt oder aktualisiert werden, ohne dass der gesamte Baum neu aufgebaut werden muss. Durch intelligente Knotenreduktion schrumpft der Trie automatisch, wenn Einträge entfernt werden.
-	\item \textbf{Sortierung und Ranking:} Die im ART gespeicherten Einträge besitzen Relevanz-Scores, die beim Einfügen oder durch Kontextinformationen gesetzt werden. Die Suchergebnisse werden anhand dieser Scores sortiert und ggf. dedupliziert. Das Ranking kombiniert verschiedene Faktoren (Nutzungsfrequenz, Dateityp, Kontext, etc.), die im Nachgang der rohen Trie-Ergebnisse angewendet werden.
+\begin{itemize} 
+  \item \textbf{Einfügen:} Jeder zu indizierende Pfad wird Zeichen für Zeichen als Sequenz in den Baum eingefügt.
+      Bereits existierende Präfixe werden gemeinsam genutzt, was insbesondere bei vielen gemeinsamen Verzeichnissen für hohe
+      Effizienz sorgt.
+
+  \item \textbf{Präfixsuche:} Suchen nach einem bestimmten Präfix (wie z.B. einem Verzeichnisnamen oder den ersten Buchstaben
+    eines Dateinamens) werden extrem schnell ausgeführt, da die Baumstruktur direkt bis zum gesuchten Präfix navigiert und von
+    dort alle relevanten Endpunkte (vollständige Pfade) extrahiert werden können.
+
+  \item \textbf{Teilkomponentensuche:} Über eine Erweiterung des klassischen Trie-Verfahrens kann der ART auch nach Teilstücken
+    eines Pfades oder nach Komponenten innerhalb eines Pfades suchen. Das ist besonders nützlich, um auch Treffer zu finden, wenn
+    der Nutzer nur einen Teil der Datei- oder Verzeichnisstruktur kennt. Dies ist allerdings nicht performant, weshalb die
+    eigentliche Suche nicht darauf basiert.
+
+  \item \textbf{Löschen und Aktualisieren:} Pfade können effizient entfernt oder aktualisiert werden, ohne dass der gesamte Baum
+    neu aufgebaut werden muss. Durch intelligente Knotenreduktion schrumpft der Trie automatisch, wenn Einträge entfernt werden.
+
+  \item \textbf{Sortierung und Ranking:} Die im ART gespeicherten Einträge besitzen Relevanz-Scores, die beim Einfügen oder durch
+    Kontextinformationen gesetzt werden. Die Suchergebnisse werden anhand dieser Scores sortiert und ggf. dedupliziert. Das
+    Ranking kombiniert verschiedene Faktoren (Nutzungsfrequenz, Dateityp, Kontext, etc.), die im Nachgang der rohen
+    Trie-Ergebnisse angewendet werden.
 \end{itemize}
 
 \textbf{Vorteile und Besonderheiten:}
 \begin{itemize}
-	\item \textit{Speichereffizienz:} Gemeinsame Pfadpräfixe werden nur einmal im Speicher abgelegt.
-	\item \textit{Performance:} Suchen, Einfügen und Löschen erfolgen in sublinearer Zeit und sind unabhängig von der Gesamtzahl der Dateien im Index performant.
-	\item \textit{Plattformübergreifende Normalisierung:} Pfade werden beim Einfügen und Suchen normalisiert, um unterschiedliche Betriebssystemkonventionen (z.\,B.\ Trennzeichen, Leerzeichen, Backslashes) zu berücksichtigen.
-	\item \textit{Optimale Zeitkomplexität:} Empirische Messungen zeigen eine Zeitkomplexität nahe bei O(log n), deutlich besser als O(n) und sogar besser als O(n log n). Bei einer Vergrößerung des Datensatzes von 10 auf 10.000 Pfade (1.000-fache Größe) steigt die Suchzeit lediglich um das 23-fache (Bild einfügen!).
-	\item \textit{Skalierbarkeit:} Selbst bei großen Datensätzen (170.000 Pfade) bleibt die Performance exzellent und zeigt sogar positive Cache-Effekte.
-	\item \textit{Adaptive Knotenstrukturen:} Die Implementierung verwendet vier spezialisierte Knotentypen (Node4, Node16, Node48, Node256), die je nach Anzahl der Kinder dynamisch gewählt werden, um den Speicherverbrauch zu optimieren.
+  \item \textit{Speichereffizienz:} Gemeinsame Pfadpräfixe werden nur einmal im Speicher abgelegt.
+
+  \item \textit{Performance:} Suchen, Einfügen und Löschen erfolgen in sublinearer Zeit und sind unabhängig von der Gesamtzahl der
+    Dateien im Index performant.
+
+  \item \textit{Plattformübergreifende Normalisierung:} Pfade werden beim Einfügen und Suchen normalisiert, um unterschiedliche
+    Betriebssystemkonventionen (z.\,B.\ Trennzeichen, Leerzeichen, Backslashes) zu berücksichtigen.
+
+  \item \textit{Optimale Zeitkomplexität:} Empirische Messungen zeigen eine Zeitkomplexität nahe bei O(log n), deutlich besser als
+    O(n) und sogar besser als O(n log n). Bei einer Vergrößerung des Datensatzes von 10 auf 10.000 Pfade (1.000-fache Größe)
+    steigt die Suchzeit lediglich um das 23-fache (Bild einfügen!).
+
+  \item \textit{Skalierbarkeit:} Selbst bei großen Datensätzen (170.000 Pfade) bleibt die Performance exzellent und zeigt sogar
+    positive Cache-Effekte.
+
+  \item \textit{Adaptive Knotenstrukturen:} Die Implementierung verwendet vier spezialisierte Knotentypen (Node4, Node16, Node48,
+    Node256), die je nach Anzahl der Kinder dynamisch gewählt werden, um den Speicherverbrauch zu optimieren.
 \end{itemize}
 
 Der ART übernimmt somit den Großteil aller Suchanfragen, insbesondere im Bereich der Präfix- und Komponentensuche, und bildet das Rückgrat für die Suchmaschine.
 
-\subsubsection{Fast Fuzzy Matcher}
-Der \textbf{Fast Fuzzy Matcher} \verb|(`fast_fuzzy_v2.rs`)| ist ein auf Trigrammen basierender Fuzzy-Suchalgorithmus, der dann zum Einsatz kommt, wenn die maximale Anzahl der gewünschten Ergebnisse (\texttt{max\_results}) durch die Präfixsuche im ART nicht erreicht wird oder unscharfe Suchanfragen gestellt werden (z.\,B.\ bei Tippfehlern, Transpositionen oder ähnlichen Zeichenfolgen).
+\subsubsection{Fast Fuzzy Matcher} Der \textbf{Fast Fuzzy Matcher} \verb|(`fast_fuzzy_v2.rs`)| ist ein auf Trigrammen basierender
+Fuzzy-Suchalgorithmus, der dann zum Einsatz kommt, wenn die maximale Anzahl der gewünschten Ergebnisse (\texttt{max\_results})
+durch die Präfixsuche im ART nicht erreicht wird oder unscharfe Suchanfragen gestellt werden (z.\,B.\ bei Tippfehlern,
+Transpositionen oder ähnlichen Zeichenfolgen).
 
 \textit{Technik und Aufbau:}
 \begin{itemize}
-	\item \textbf{Trigram-Index:} Beim Hinzufügen eines Pfades wird für jede mögliche 3-Zeichen-Kombination (Trigramm) ein Index aufgebaut, der speichert, in welchen Pfaden dieses Trigramm vorkommt. Das erlaubt, bei einer Suchanfrage schnell alle potenziell ähnlichen Pfade zu identifizieren.
-	\item \textbf{Effiziente Variationserzeugung:} Für die eigentliche Suchanfrage werden verschiedene Varianten (z.\,B.\ mit ausgelassenen, vertauschten oder ersetzten Buchstaben) generiert, um auch schwerwiegende Tippfehler abdecken zu können, ohne dass die Performance bedeutenswert leidet.
-	\item \textbf{Scoring:} Die gefundenen Kandidaten werden anhand der Überlappung der Trigramme, der Ähnlichkeit zum Suchbegriff und weiterer Faktoren (z.\,B.\ Position der Übereinstimmung im Pfad) bewertet und sortiert.
+  \item \textbf{Trigram-Index:} Beim Hinzufügen eines Pfades wird für jede mögliche 3-Zeichen-Kombination (Trigramm) ein Index
+    aufgebaut, der speichert, in welchen Pfaden dieses Trigramm vorkommt. Das erlaubt, bei einer Suchanfrage schnell alle
+    potenziell ähnlichen Pfade zu identifizieren.
+
+  \item \textbf{Effiziente Variationserzeugung:} Für die eigentliche Suchanfrage werden verschiedene Varianten (z.\,B.\ mit
+    ausgelassenen, vertauschten oder ersetzten Buchstaben) generiert, um auch schwerwiegende Tippfehler abdecken zu können, ohne
+    dass die Performance bedeutenswert leidet.
+
+  \item \textbf{Scoring:} Die gefundenen Kandidaten werden anhand der Überlappung der Trigramme, der Ähnlichkeit zum Suchbegriff
+    und weiterer Faktoren (z.\,B.\ Position der Übereinstimmung im Pfad) bewertet und sortiert.
+
 	\item \textbf{Fallback-Mechanismus:} Falls der ART keine oder zu wenige Ergebnisse liefert, übernimmt der Fast Fuzzy Matcher und ergänzt die Ergebnisliste dynamisch.
-	\item \textbf{Sub-lineare Zeitkomplexität:} Empirische Messungen zeigen eine Zeitkomplexität von O(n\textsuperscript{a}), wobei $a \approx 0,5-0,7$ und n die Nummer der Pfade ist. Bei einer Verzehnfachung der Datenmenge steigt die Suchzeit typischerweise nur um das 3- bis 7-fache.
+
+  \item \textbf{Sub-lineare Zeitkomplexität:} Empirische Messungen zeigen eine Zeitkomplexität von O(n\textsuperscript{a}), wobei
+    $a \approx 0,5-0,7$ und n die Nummer der Pfade ist. Bei einer Verzehnfachung der Datenmenge steigt die Suchzeit typischerweise
+    nur um das 3- bis 7-fache.
+
 	      (siehe bild !!!!)
-	\item \textbf{Überlegene Performance:} Im Vergleich zu klassischen Fuzzy-Matching-Algorithmen wie Levenshtein (O(N·M²), mit N Anzahl der Pfade und M die durchschnittliche String Länge ist) oder regulären Ausdrücken (O(N·Q), mit N Anzahl der Pfade und Q die query Länge) bietet der Trigram-basierte Ansatz eine dramatisch bessere Skalierbarkeit bei großen Datensätzen.
+
+  \item \textbf{Überlegene Performance:} Im Vergleich zu klassischen Fuzzy-Matching-Algorithmen wie Levenshtein (O(N·M²), mit N
+    Anzahl der Pfade und M die durchschnittliche String Länge ist) oder regulären Ausdrücken (O(N·Q), mit N Anzahl der Pfade und Q
+    die query Länge) bietet der Trigram-basierte Ansatz eine dramatisch bessere Skalierbarkeit bei großen Datensätzen.
 \end{itemize}
 
-\textit{Einsatzgebiet:} Der Fast Fuzzy Matcher ist optimiert für die schnelle, aber unscharfe Suche in großen Datenmengen und stellt sicher, dass auch bei fehlerhaften oder unvollständigen Eingaben relevante Treffer angezeigt werden.
+\textit{Einsatzgebiet:} Der Fast Fuzzy Matcher ist optimiert für die schnelle, aber unscharfe Suche in großen Datenmengen und
+stellt sicher, dass auch bei fehlerhaften oder unvollständigen Eingaben relevante Treffer angezeigt werden.
 
-\subsubsection{LRU Cache (PathCache Wrapper)}
-Zur weiteren Beschleunigung der Suchmaschine wird ein \textbf{Least-Recently-Used (LRU) Cache} als PathCache eingesetzt. Dieser speichert die Ergebnisse der zuletzt gestellten Suchanfragen sowie deren besten 5 Treffer, um häufig wiederkehrende Anfragen oder Pfade unmittelbar zurückgeben zu können.
+\subsubsection{LRU Cache (PathCache Wrapper)} Zur weiteren Beschleunigung der Suchmaschine wird ein \textbf{Least-Recently-Used
+(LRU) Cache} als PathCache eingesetzt. Dieser speichert die Ergebnisse der zuletzt gestellten Suchanfragen sowie deren besten 5
+Treffer, um häufig wiederkehrende Anfragen oder Pfade unmittelbar zurückgeben zu können.
 
 \begin{itemize}
-	\item \textbf{Kapazitäts- und Zeitlimit:} Der Cache ist begrenzt in der Anzahl der gespeicherten Einträge und kann zusätzlich eine Ablaufzeit (TTL) für einzelne Einträge besitzen, um Speicherüberlauf und Veraltung zu vermeiden.
-	\item \textbf{Thread-Sicherheit:} Da mehrere Suchanfragen parallel verarbeitet werden können, ist der Cache als Wrapper um eine interne LRU-Implementierung gestaltet und durch einen Mutex geschützt.
-	\item \textbf{Automatische Bereinigung:} Veraltete oder nicht mehr existierende Pfade werden automatisch oder bei Zugriffen entfernt (\textit{purge}), um eine hohe Konsistenz zu gewährleisten.
-	\item \textbf{Konstante Zeitkomplexität:} Alle Hauptoperationen (Einfügen, Abfragen, Löschen) erfolgen in O(1) Zeit durch die Kombination einer HashMap für schnellen Schlüsselzugriff und einer doppelt verketteten Liste für die LRU-Ordnung. (siehe Bild!!!)
-	\item \textbf{Hervorragende Skalierbarkeit:} Benchmarks zeigen, dass selbst bei einer Verzehnfachung der Cache-Größe die durchschnittliche Zugriffszeit nur um den Faktor 1,3 bis 2,5 zunimmt.
-	\item \textbf{Ultraschnelle Zugriffszeiten:} Die empirisch gemessenen Zugriffszeiten liegen zwischen 57,4 ns für kleine Caches (100 Einträge) und 265,2 ns für sehr große Caches (100.000 Einträge). Allerdings ist hier zu beachten, dass die Effizienz bei der Suche abnimmt, da der PatchMatch Wrapper benutzt wird.
-	\item \textbf{Dynamische Score-Aktualisierung:} Der Cache ermöglicht die Aktualisierung der Relevanz-Scores von Einträgen, ohne deren Position in der LRU-Reihenfolge zu verändern.
+  \item \textbf{Kapazitäts- und Zeitlimit:} Der Cache ist begrenzt in der Anzahl der gespeicherten Einträge und kann zusätzlich
+    eine Ablaufzeit (TTL) für einzelne Einträge besitzen, um Speicherüberlauf und Veraltung zu vermeiden.
+
+  \item \textbf{Thread-Sicherheit:} Da mehrere Suchanfragen parallel verarbeitet werden können, ist der Cache als Wrapper um eine
+    interne LRU-Implementierung gestaltet und durch einen Mutex geschützt.
+
+  \item \textbf{Automatische Bereinigung:} Veraltete oder nicht mehr existierende Pfade werden automatisch oder bei Zugriffen
+    entfernt (\textit{purge}), um eine hohe Konsistenz zu gewährleisten.
+
+  \item \textbf{Konstante Zeitkomplexität:} Alle Hauptoperationen (Einfügen, Abfragen, Löschen) erfolgen in O(1) Zeit durch die
+    Kombination einer HashMap für schnellen Schlüsselzugriff und einer doppelt verketteten Liste für die LRU-Ordnung. (siehe
+    Bild!!!)
+
+  \item \textbf{Hervorragende Skalierbarkeit:} Benchmarks zeigen, dass selbst bei einer Verzehnfachung der Cache-Größe die
+    durchschnittliche Zugriffszeit nur um den Faktor 1,3 bis 2,5 zunimmt.
+
+  \item \textbf{Ultraschnelle Zugriffszeiten:} Die empirisch gemessenen Zugriffszeiten liegen zwischen 57,4 ns für kleine Caches
+    (100 Einträge) und 265,2 ns für sehr große Caches (100.000 Einträge). Allerdings ist hier zu beachten, dass die Effizienz bei
+    der Suche abnimmt, da der PatchMatch Wrapper benutzt wird.
+
+  \item \textbf{Dynamische Score-Aktualisierung:} Der Cache ermöglicht die Aktualisierung der Relevanz-Scores von Einträgen, ohne
+    deren Position in der LRU-Reihenfolge zu verändern.
 \end{itemize}
 
-\textit{Nutzen:} Der LRU Cache reduziert die Antwortzeit für wiederholte oder populäre Suchanfragen erheblich und trägt durch intelligente Speicherbereinigung zur Stabilität des Gesamtsystems bei.
+\textit{Nutzen:} Der LRU Cache reduziert die Antwortzeit für wiederholte oder populäre Suchanfragen erheblich und trägt durch
+intelligente Speicherbereinigung zur Stabilität des Gesamtsystems bei.
 
-\textit{Anmerkung}: Der PathCacheWrapper nutzt ein Mutex, um mehreren Lesern gleichzeitigen Zugriff zu ermöglichen, während Schreiboperationen exklusiv erfolgen. Dies maximiert den Durchsatz bei überwiegend lesendem Zugriff, wie es bei Suchanfragen typisch ist.
+\textit{Anmerkung}: Der PathCacheWrapper nutzt ein Mutex, um mehreren Lesern gleichzeitigen Zugriff zu ermöglichen, während
+Schreiboperationen exklusiv erfolgen. Dies maximiert den Durchsatz bei überwiegend lesendem Zugriff, wie es bei Suchanfragen
+typisch ist.
 
-\subsubsection{Kontextbasiertes Ranking (Context Ranker)}
-Das \textbf{Kontext-Ranking} ergänzt die Roh-Ergebnisse aus ART und Fuzzy-Suche um eine dynamische Gewichtung, die auf aktuellen Kontextinformationen basiert. Dazu zählen etwa:
+\subsubsection{Kontextbasiertes Ranking (Context Ranker)} 
+Das \textbf{Kontext-Ranking} ergänzt die Roh-Ergebnisse aus ART und
+Fuzzy-Suche um eine dynamische Gewichtung, die auf aktuellen Kontextinformationen basiert. Dazu zählen etwa:
+
 \begin{itemize}
-	\item Das aktuelle Arbeitsverzeichnis des Nutzers (Suchanfragen im gerade geöffneten Ordner werden stärker gewichtet)
+  \item Das aktuelle Arbeitsverzeichnis des Nutzers (Suchanfragen im gerade geöffneten Ordner werden stärker gewichtet)
+
 	\item Benutzerpräferenzen, wie bevorzugte Dateiendungen oder häufig genutzte Pfade
+
 	\item Nutzungsverhalten: Häufigkeit und Aktualität der Zugriffe auf bestimmte Dateien
 \end{itemize}
 
-Das Ranking wurde zuletzt weiterentwickelt und umfasst nun eine fein abgestimmte Kombination aus Frequenz, Aktualität, Kontext (aktuelles Verzeichnis), bevorzugtem Dateityp und Übereinstimmung im Dateinamen. Die Gewichtung erfolgt durch ein mehrstufiges Scoring, das nach Anwendung aller Faktoren durch eine Sigmoid-Funktion normalisiert wird. Dadurch wird verhindert, dass einzelne Faktoren das Gesamtergebnis übermäßig dominieren. Die Top-Ergebnisse werden abschließend erneut sortiert und ggf. gekürzt.
+Das Ranking wurde zuletzt weiterentwickelt und umfasst nun eine fein abgestimmte Kombination aus Frequenz, Aktualität, Kontext
+(aktuelles Verzeichnis), bevorzugtem Dateityp und Übereinstimmung im Dateinamen. Die Gewichtung erfolgt durch ein mehrstufiges
+Scoring, das nach Anwendung aller Faktoren durch eine Sigmoid-Funktion normalisiert wird. Dadurch wird verhindert, dass einzelne
+Faktoren das Gesamtergebnis übermäßig dominieren. Die Top-Ergebnisse werden abschließend erneut sortiert und ggf. gekürzt.
 
-Das Kontext-Ranking ist als abschließender Schritt in die Ergebnisaufbereitung integriert und sorgt dafür, dass für den jeweiligen Nutzungskontext besonders relevante Treffer weiter nach oben sortiert werden. Im Vergleich zu den anderen Komponenten ist der Kontext-Ranker weniger komplex, trägt jedoch maßgeblich zur gefühlten Qualität und Benutzerfreundlichkeit der Suchmaschine bei.
+Das Kontext-Ranking ist als abschließender Schritt in die Ergebnisaufbereitung integriert und sorgt dafür, dass für den jeweiligen
+Nutzungskontext besonders relevante Treffer weiter nach oben sortiert werden. Im Vergleich zu den anderen Komponenten ist der
+Kontext-Ranker weniger komplex, trägt jedoch maßgeblich zur gefühlten Qualität und Benutzerfreundlichkeit der Suchmaschine bei.
 
 \vspace{0.5em}
 \noindent
-\textbf{Zusammenfassend:} Durch diese Schichten und Komponenten ist die Suchmaschine sowohl in ihrer Funktionalität als auch in ihrer Performance an den Anforderungen eines modernen Dateiexplorers ausgerichtet. Die Kombination aus ART als Hauptindex (mit nahezu logarithmischer Zeitkomplexität), Fast Fuzzy Matcher als Ergänzung für unscharfe Anfragen (mit sub-linearer Komplexität), LRU Cache zur Beschleunigung (mit konstanter Zugriffszeit, mit Top-5-Caching) und Kontext-Ranking für mehr Relevanz ergibt eine Suchmaschine, die sowohl für große Datenmengen als auch für anspruchsvolle Nutzerinteraktionen im Dateiexplorer optimal abgestimmt ist. Die empirischen Benchmarks belegen die hervorragende Skalierbarkeit und Echtzeitfähigkeit selbst bei hunderttausenden indizierten Pfaden. Der Dateiexplorer lässt sich leicht erweitern und kann durch Anpassung einzelner Module flexibel auf verschiedene Anwendungsszenarien reagieren.
+\textbf{Zusammenfassend:} 
+
+Durch diese Schichten und Komponenten ist die Suchmaschine sowohl in ihrer Funktionalität als auch in ihrer Performance an den
+Anforderungen eines modernen Dateiexplorers ausgerichtet. Die Kombination aus ART als Hauptindex (mit nahezu logarithmischer
+Zeitkomplexität), Fast Fuzzy Matcher als Ergänzung für unscharfe Anfragen (mit sub-linearer Komplexität), LRU Cache zur
+Beschleunigung (mit konstanter Zugriffszeit, mit Top-5-Caching) und Kontext-Ranking für mehr Relevanz ergibt eine Suchmaschine,
+die sowohl für große Datenmengen als auch für anspruchsvolle Nutzerinteraktionen im Dateiexplorer optimal abgestimmt ist. Die
+empirischen Benchmarks belegen die hervorragende Skalierbarkeit und Echtzeitfähigkeit selbst bei hunderttausenden indizierten
+Pfaden. Der Dateiexplorer lässt sich leicht erweitern und kann durch Anpassung einzelner Module flexibel auf verschiedene
+Anwendungsszenarien reagieren.
