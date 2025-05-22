@@ -1,16 +1,27 @@
 \section{Performanceoptimierung}\label{sec:Performanceoptimierung}
 
-Performance-Optimierung ist ein zentraler Bestandteil der Softwareentwicklung, insbesondere bei Anwendungen, die regelmäßig mit
-großen Datenmengen oder komplexen Verarbeitungsprozessen arbeiten. Ziel ist es, Ressourcen wie CPU-Zeit, Arbeitsspeicher und I/O
-effizient zu nutzen, um die Reaktionsgeschwindigkeit und Gesamtleistung der Anwendung zu verbessern. Eine performante Anwendung
-trägt nicht nur zu einem besseren Nutzererlebnis bei, sondern reduziert auch Energieverbrauch und Hardwareanforderungen.
+Performance-Optimierung stellt einen essenziellen Bestandteil Softwareentwicklung dar, besonders bei Anwendungen, die
+häufig mit großen Datenvolumina oder komplexen Berechnungen arbeiten müssen. Ziel einer solchen Optimierung ist die effiziente
+Nutzung von Ressourcen wie CPU-Leistung, Arbeitsspeicher und Eingabe-/Ausgabesystemen (I/O), um die Reaktionszeiten und die
+allgemeine Performance einer Applikation maßgeblich zu verbessern. Neben einer Steigerung des Nutzerkomforts tragen performante
+Anwendungen auch zu einer Verringerung des Energieverbrauchs und zu niedrigeren Anforderungen an die Hardware bei.
 
-Ein nützliches Werkzeug zur Performance-Analyse sind sogenannte \textit{Flamegraphs}. Diese visualisieren die Aufrufstruktur eines
-Programms und zeigen an, wie viel Zeit in welchen Funktionen verbracht wird. Die Breite eines Balkens in einem Flamegraph steht
-dabei für die Häufigkeit bzw. Dauer der Ausführung einer Funktion innerhalb eines Profiling-Zeitraums – je breiter der Balken,
-desto höher der Ressourcenverbrauch an dieser Stelle.
+Ein besonders wirkungsvolles Hilfsmittel zur Analyse und Optimierung der Performance sind sogenannte \textit{Flamegraphs}. Diese
+Diagramme visualisieren detailliert die Aufrufhierarchie eines Programms und veranschaulichen, wie lange und wie oft bestimmte
+Funktionen ausgeführt wurden. Im Flamegraph wird die Dauer der Funktionsausführung durch die Breite eines Balkens repräsentiert.
+Je breiter der Balken, desto größer ist der Anteil der Rechenzeit, die diese Funktion beansprucht hat.
 
-Flamegraphs helfen, sogenannte Hotspots im Code zu identifizieren – also Funktionen oder Abschnitte, die besonders viel
-Rechenzeit beanspruchen. Durch gezielte Analyse dieser Bereiche können Engpässe erkannt und durch algorithmische Verbesserungen,
-Caching oder Parallelisierung gezielt behoben werden. Besonders hilfreich ist dabei die hierarchische Darstellung: Sie zeigt,
-welche Funktionen von welchen anderen aufgerufen wurden, was eine Ursachenanalyse erheblich erleichtert.
+Mithilfe von Flamegraphs lassen sich sogenannte Hotspots im Programmcode präzise identifizieren. Hotspots sind jene Funktionen
+oder Codeabschnitte, die überproportional viel Rechenleistung verbrauchen. Durch eine gezielte Untersuchung dieser kritischen
+Bereiche lassen sich Leistungsengpässe aufdecken und mittels gezielter algorithmischer Verbesserungen, effizientem Caching oder
+Parallelisierung beheben. Wir haben diese verwendet um während der Entwicklung Methoden zu überprüfen, welche mit größeren
+Datenmengen hantieren. Hierbei war es uns wichtig, dass wir gerade, da es um das Filesystem geht, so performant wie möglich
+hantieren. An vielen Stellen ist weiterhin Raum für Verbesserungen durch verbesserte Speicherverwaltung. Um sich ein Bild zu
+machen, wie diese aufgebaut sind, befinden sich im Anhang Beispiele (\ref{fig:first_flame_graph} \ref{fig:second_flame_graph}) für
+die von uns erstellten Graphen. Erstellt haben wir diese mit einem der vielen Flamegraph Tools \cite{flamegraph_rs}. Wir haben uns
+für dieses entschieden, da es direkt über cargo erreichbar ist und reibungslos mit Rust funktioniert. 
+
+(Die dargestellten Graphen zeigen Spitzen, welche durch die rekursive Suche in den Unterverzeichnissen entstehen. Da diese
+Verzeichnisse von Testläufen generiert wurden, ist es wichtig, zwischen Setup-Code und dem eigentlichen Anwendungscode zu
+differenzieren. Die gezeigten Graphen dienen ausschließlich der Veranschaulichung typischer Merkmale und sollten daher nicht als
+reale Performance-Metriken interpretiert werden.)

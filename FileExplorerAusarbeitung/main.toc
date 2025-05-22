@@ -1,9 +1,0 @@
-\babel@toc {ngerman}{}\relax 
-\contentsline {section}{\numberline {1}Einleitung}{1}{section.1}%
-\contentsline {section}{\numberline {2}Daten vom Backend zum Frontend}{2}{section.2}%
-\contentsline {section}{\numberline {3}Performanceoptimierung}{4}{section.3}%
-\contentsline {section}{\numberline {4}Anhang}{5}{section.4}%
-\contentsline {subsection}{\numberline {4.1}State Beispiel}{5}{subsection.4.1}%
-\contentsline {section}{Literaturverzeichnis}{II}{section*.2}%
-\contentsline {section}{Abbildungsverzeichnis}{III}{section*.3}%
-\contentsline {section}{Aufteilung der Texte}{IV}{section*.4}%
