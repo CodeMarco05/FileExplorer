@@ -1105,7 +1105,7 @@ impl SearchCore {
     }
 }
 
-/// Statistics about the autocomplete engine's internal state.
+/// Statistics about the engine's internal state.
 ///
 /// This struct provides visibility into the current memory usage
 /// and index sizes of the engine.
@@ -1117,7 +1117,7 @@ pub struct EngineStats {
 }
 
 #[cfg(test)]
-mod tests_autocomplete_engine {
+mod tests_search_core {
     use super::*;
     use std::fs;
     use std::thread::sleep;
@@ -1313,7 +1313,7 @@ mod tests_autocomplete_engine {
                 .as_millis()
         );
 
-        let temp_dir = std::env::temp_dir().join(format!("autocomplete_engine_test_{}", unique_id));
+        let temp_dir = std::env::temp_dir().join(format!("search_core_test_{}", unique_id));
 
         // Clean up any previous test directories
         if temp_dir.exists() {
@@ -1646,8 +1646,8 @@ mod tests_autocomplete_engine {
     }
 
     #[test]
-    fn test_with_real_world_data_autocomplete_engine() {
-        log_info!("Testing autocomplete engine with real-world test data");
+    fn test_with_real_world_data_search_core() {
+        log_info!("Testing search core with real-world test data");
 
         // Create a new engine with reasonable parameters
         let mut engine = SearchCore::new(100, 20, Duration::from_secs(300), RankingConfig::default());
@@ -1896,10 +1896,10 @@ mod tests_autocomplete_engine {
     #[cfg(feature = "long-tests")]
     #[test]
     fn test_with_all_test_data_paths() {
-        log_info!("Testing autocomplete engine with all available test data paths");
+        log_info!("Testing search core with all available test data paths");
 
         // Create a new engine with reasonable parameters
-        let mut engine = AutocompleteEngine::new(100, 20, Duration::from_secs(300), RankingConfig::default());
+        let mut engine = SearchCore::new(100, 20, Duration::from_secs(300), RankingConfig::default());
 
         // Get ALL available test paths (no limit)
         let paths = collect_test_paths(None);
@@ -2126,8 +2126,8 @@ mod tests_autocomplete_engine {
 
     #[cfg(feature = "long-tests")]
     #[test]
-    fn benchmark_search_with_all_paths_autocomplete_engine() {
-        log_info!("Benchmarking autocomplete engine with thousands of real-world paths");
+    fn benchmark_search_with_all_paths_search_core() {
+        log_info!("Benchmarking search core with thousands of real-world paths");
 
         // 1. Collect all available paths
         let paths = collect_test_paths(None); // Get all available paths
@@ -2304,7 +2304,7 @@ mod tests_autocomplete_engine {
             let subset_size = batch_size.min(all_paths.len());
 
             // Create a fresh engine with only the needed paths
-            let mut subset_engine = AutocompleteEngine::new(1000, 20, Duration::from_secs(300), RankingConfig::default());
+            let mut subset_engine = SearchCore::new(1000, 20, Duration::from_secs(300), RankingConfig::default());
             let start_insert_subset = Instant::now();
 
             for i in 0..subset_size {
