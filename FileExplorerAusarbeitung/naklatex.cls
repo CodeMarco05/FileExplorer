@@ -2,13 +2,14 @@
   \ProvidesClass{naklatex}
 
   % Basisklasse laden
-    \LoadClass[11pt,a4paper]{article}
+    \LoadClass[10.5pt,a4paper]{article}
 
   % Pakete
   \RequirePackage[ngerman]{babel}                                             % deutsches Sprachpaket
   \RequirePackage[utf8]{inputenc}                                             % UTF8 Support
   \RequirePackage[babel, german=quotes]{csquotes}                             % Erweiterte Zitationsoptionen
   \RequirePackage{graphicx}                                                   % Ermöglicht das Einbinden von Bildern
+  \RequirePackage{svg}
 \RequirePackage[justification=RaggedRight, singlelinecheck=false]{caption}  % Ermöglicht das Beschriften von Bildern
 \RequirePackage{subcaption}                                                 % Ermöglicht eine Beschriftung für mehrere Bilder
 \RequirePackage{microtype}													% Tool zur verbesserten Textausrichtung in der generierten PDF, siehe http://www.khirevich.com/latex/microtype/
@@ -133,9 +134,7 @@
 \newcommand{\anhang}{
 	\addtocontents{ahv}{\vskip 0.3cm}
 	\listofanhangselement
-	\addcontentsline{toc}{section}{Anhang}
-	\clearpage
-	\phantomsection	
+	\addcontentsline{toc}{section}{Anhang}	
 
 	\input{dokumente/99_anhang.tex}
 	\clearpage

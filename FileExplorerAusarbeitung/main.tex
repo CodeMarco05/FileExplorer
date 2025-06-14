@@ -1,5 +1,7 @@
 \documentclass[]{naklatex} 
 \usepackage{lipsum}
+\usepackage{svg}
+\svgsetup{inkscapelatex=false}
 
 % Zitationseinstellungen
 \usepackage[backend=biber]{biblatex}
@@ -25,12 +27,10 @@
   \input{chapter/performaceReview.tex}
   \input{chapter/search.tex}
 
-	\section{Anhang}\label{sec:Anhang}
-	\input{additions/state-example.tex}
-
 \end{mainmatter}
 
 \begin{backmatter}
+  \anhang
 	\literaturverzeichnis
 	\abbildungsverzeichnis
 	\eidErklaerung

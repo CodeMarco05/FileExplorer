@@ -11,7 +11,7 @@ use crate::search_engine::art_v5::ART;
 use crate::search_engine::fast_fuzzy_v2::PathMatcher;
 use crate::search_engine::path_cache_wrapper::PathCache;
 
-/// Autocomplete engine that combines caching, prefix search, and fuzzy search
+/// Search core that combines caching, prefix search, and fuzzy search
 /// for high-performance path completion with contextual relevance.
 ///
 /// This implementation uses an Adaptive Radix Trie (ART) for prefix searching,
@@ -24,7 +24,7 @@ use crate::search_engine::path_cache_wrapper::PathCache;
 /// - Search: O(m + log n) empirical time complexity where m is query length
 /// - Typical search latency: ~1ms across datasets of up to 170,000 paths
 /// - Cache speedup: 3×-7× for repeated queries
-pub struct AutocompleteEngine {
+pub struct SearchCore {
     /// Cache for storing recent search results
     cache: PathCache,
 
@@ -63,8 +63,8 @@ pub struct AutocompleteEngine {
     results_capacity: usize,
 }
 
-impl AutocompleteEngine {
-    /// Creates a new AutocompleteEngine with specified cache size and max results.
+impl SearchCore {
+    /// Creates a new SearchCore with specified cache size and max results.
     ///
     /// # Arguments
     /// * `cache_size` - The maximum number of query results to cache
@@ -72,7 +72,7 @@ impl AutocompleteEngine {
     /// * `ranking_config` - Configuration for ranking search results
     ///
     /// # Returns
-    /// A new AutocompleteEngine instance with provided ranking configuration
+    /// A new Search Core instance with provided ranking configuration
     ///
     /// # Performance
     /// Initialization is O(1) as actual data structures are created empty
@@ -1125,7 +1125,7 @@ mod tests_autocomplete_engine {
 
     #[test]
     fn test_basic_search() {
-        let mut engine = AutocompleteEngine::new(100, 10, Duration::from_secs(300), RankingConfig::default());
+        let mut engine = SearchCore::new(100, 10, Duration::from_secs(300), RankingConfig::default());
 
         // Add some test paths
         engine.add_path("/home/user/documents/report.pdf");
@@ -1152,7 +1152,7 @@ mod tests_autocomplete_engine {
 
     #[test]
     fn test_fuzzy_search_fallback() {
-        let mut engine = AutocompleteEngine::new(100, 10, Duration::from_secs(300), RankingConfig::default());
+        let mut engine = SearchCore::new(100, 10, Duration::from_secs(300), RankingConfig::default());
 
         // Add some test paths
         engine.add_path("/home/user/documents/report.pdf");
@@ -1171,7 +1171,7 @@ mod tests_autocomplete_engine {
 
     #[test]
     fn test_recency_and_frequency_ranking() {
-        let mut engine = AutocompleteEngine::new(100, 10, Duration::from_secs(300), RankingConfig::default());
+        let mut engine = SearchCore::new(100, 10, Duration::from_secs(300), RankingConfig::default());
 
         // Add some test paths
         engine.add_path("/path/a.txt");
@@ -1200,7 +1200,7 @@ mod tests_autocomplete_engine {
 
     #[test]
     fn test_current_directory_context() {
-        let mut engine = AutocompleteEngine::new(100, 10, Duration::from_secs(300), RankingConfig::default());
+        let mut engine = SearchCore::new(100, 10, Duration::from_secs(300), RankingConfig::default());
 
         // Add paths in different directories
         engine.add_path("/home/user/docs/file1.txt");
@@ -1220,7 +1220,7 @@ mod tests_autocomplete_engine {
 
     #[test]
     fn test_extension_preference() {
-        let mut engine = AutocompleteEngine::new(100, 10, Duration::from_secs(300), RankingConfig::default());
+        let mut engine = SearchCore::new(100, 10, Duration::from_secs(300), RankingConfig::default());
 
         // Add paths with different extensions
         engine.add_path("/docs/report.pdf");
@@ -1237,7 +1237,7 @@ mod tests_autocomplete_engine {
 
     #[test]
     fn test_removal() {
-        let mut engine = AutocompleteEngine::new(100, 10, Duration::from_secs(300), RankingConfig::default());
+        let mut engine = SearchCore::new(100, 10, Duration::from_secs(300), RankingConfig::default());
 
         // Add paths
         engine.add_path("/path/file1.txt");
@@ -1258,7 +1258,7 @@ mod tests_autocomplete_engine {
 
     #[test]
     fn test_cache_expiration() {
-        let mut engine = AutocompleteEngine::new(10, 5, Duration::from_secs(300), RankingConfig::default());
+        let mut engine = SearchCore::new(10, 5, Duration::from_secs(300), RankingConfig::default());
 
         // Add a path
         engine.add_path("/test/file.txt");
@@ -1283,7 +1283,7 @@ mod tests_autocomplete_engine {
 
     #[test]
     fn test_stats() {
-        let mut engine = AutocompleteEngine::new(100, 10, Duration::from_secs(300), RankingConfig::default());
+        let mut engine = SearchCore::new(100, 10, Duration::from_secs(300), RankingConfig::default());
 
         // Add some paths
         for i in 0..5 {
@@ -1360,7 +1360,7 @@ mod tests_autocomplete_engine {
         let temp_dir = create_temp_dir_structure();
         let temp_dir_str = temp_dir.to_str().unwrap();
 
-        let mut engine = AutocompleteEngine::new(100, 10, Duration::from_secs(300), RankingConfig::default());
+        let mut engine = SearchCore::new(100, 10, Duration::from_secs(300), RankingConfig::default());
 
         // Add paths recursively
         engine.add_paths_recursive(temp_dir_str, None);
@@ -1401,7 +1401,7 @@ mod tests_autocomplete_engine {
         let temp_dir = create_temp_dir_structure();
         let temp_dir_str = temp_dir.to_str().unwrap();
 
-        let mut engine = AutocompleteEngine::new(100, 10, Duration::from_secs(300), RankingConfig::default());
+        let mut engine = SearchCore::new(100, 10, Duration::from_secs(300), RankingConfig::default());
 
         // Add paths recursively with exclusions
         let excluded_patterns = vec!["nested".to_string(), "file2".to_string()];
@@ -1432,7 +1432,7 @@ mod tests_autocomplete_engine {
         let temp_dir_str = temp_dir.to_str().unwrap();
         let subdir1_str = temp_dir.join("subdir1").to_str().unwrap().to_string();
 
-        let mut engine = AutocompleteEngine::new(100, 10, Duration::from_secs(300), RankingConfig::default());
+        let mut engine = SearchCore::new(100, 10, Duration::from_secs(300), RankingConfig::default());
 
         // First add all paths recursively
         engine.add_paths_recursive(temp_dir_str, None);
@@ -1509,7 +1509,7 @@ mod tests_autocomplete_engine {
             fs::set_permissions(&restricted_dir, perms).expect("Failed to set permissions");
         }
 
-        let mut engine = AutocompleteEngine::new(100, 10, Duration::from_secs(300), RankingConfig::default());
+        let mut engine = SearchCore::new(100, 10, Duration::from_secs(300), RankingConfig::default());
 
         // Add paths recursively - should handle the permission error gracefully
         engine.add_paths_recursive(temp_dir_str, None);
@@ -1543,7 +1543,7 @@ mod tests_autocomplete_engine {
 
     #[test]
     fn test_add_and_remove_with_nonexistent_paths() {
-        let mut engine = AutocompleteEngine::new(100, 10, Duration::from_secs(300), RankingConfig::default());
+        let mut engine = SearchCore::new(100, 10, Duration::from_secs(300), RankingConfig::default());
 
         // Try to add a non-existent path recursively
         let nonexistent_path = "/path/that/does/not/exist";
@@ -1650,7 +1650,7 @@ mod tests_autocomplete_engine {
         log_info!("Testing autocomplete engine with real-world test data");
 
         // Create a new engine with reasonable parameters
-        let mut engine = AutocompleteEngine::new(100, 20, Duration::from_secs(300), RankingConfig::default());
+        let mut engine = SearchCore::new(100, 20, Duration::from_secs(300), RankingConfig::default());
 
         // Get real-world paths from test data
         let paths = collect_test_paths(Some(500));
