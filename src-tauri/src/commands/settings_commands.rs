@@ -1,60 +1,9 @@
+use crate::error_handling::{Error, ErrorCode};
 use crate::state::SettingsState;
-use serde_json::{to_string, Value};
+use serde_json::to_string;
 use std::io;
 use std::sync::{Arc, Mutex};
 use tauri::State;
-
-pub fn get_settings_as_json_impl(state: Arc<Mutex<SettingsState>>) -> String {
-    let settings_inner = state.lock().unwrap().0.clone();
-    to_string(&settings_inner).unwrap()
-}
-
-pub fn get_setting_field_impl(
-    state: Arc<Mutex<SettingsState>>,
-    key: String,
-) -> Result<Value, String> {
-    let settings_state = state.lock().unwrap();
-    settings_state
-        .get_setting_field(&key)
-        .map_err(|e| e.to_string())
-}
-
-pub fn update_settings_field_impl(
-    state: Arc<Mutex<SettingsState>>,
-    key: String,
-    value: Value,
-) -> Result<String, String> {
-    let settings_state = state.lock().unwrap();
-    settings_state
-        .update_setting_field(&key, value)
-        .and_then(|updated| {
-            to_string(&updated).map_err(|e| io::Error::new(io::ErrorKind::Other, e))
-        })
-        .map_err(|e| e.to_string())
-}
-
-pub fn update_multiple_settings_impl(
-    state: Arc<Mutex<SettingsState>>,
-    updates: serde_json::Map<String, Value>,
-) -> Result<String, String> {
-    let settings_state = state.lock().unwrap();
-    settings_state
-        .update_multiple_settings(&updates)
-        .and_then(|updated| {
-            to_string(&updated).map_err(|e| io::Error::new(io::ErrorKind::Other, e))
-        })
-        .map_err(|e| e.to_string())
-}
-
-pub fn reset_settings_impl(state: Arc<Mutex<SettingsState>>) -> Result<String, String> {
-    let settings_state = state.lock().unwrap();
-    settings_state
-        .reset_settings()
-        .and_then(|updated| {
-            to_string(&updated).map_err(|e| io::Error::new(io::ErrorKind::Other, e))
-        })
-        .map_err(|e| e.to_string())
-}
 
 /// Retrieves the current application settings as a JSON string.
 ///
@@ -77,6 +26,11 @@ pub fn reset_settings_impl(state: Arc<Mutex<SettingsState>>) -> Result<String, S
 #[tauri::command]
 pub fn get_settings_as_json(state: State<Arc<Mutex<SettingsState>>>) -> String {
     get_settings_as_json_impl(state.inner().clone())
+}
+
+pub fn get_settings_as_json_impl(state: Arc<Mutex<SettingsState>>) -> String {
+    let settings_inner = state.lock().unwrap().0.clone();
+    to_string(&settings_inner).unwrap()
 }
 
 /// Retrieves the value of a specific setting field.
@@ -106,8 +60,22 @@ pub fn get_settings_as_json(state: State<Arc<Mutex<SettingsState>>>) -> String {
 pub fn get_setting_field(
     state: State<Arc<Mutex<SettingsState>>>,
     key: String,
-) -> Result<Value, String> {
+) -> Result<serde_json::Value, String> {
     get_setting_field_impl(state.inner().clone(), key)
+}
+
+pub fn get_setting_field_impl(
+    state: Arc<Mutex<SettingsState>>,
+    key: String,
+) -> Result<serde_json::Value, String> {
+    let settings_state = state.lock().unwrap();
+    settings_state.get_setting_field(&key).map_err(|e| {
+        Error::new(
+            ErrorCode::InternalError,
+            format!("Failed to get setting field: {}", e),
+        )
+        .to_json()
+    })
 }
 
 /// Updates a specific setting field with a new value.
@@ -138,9 +106,29 @@ pub fn get_setting_field(
 pub fn update_settings_field(
     state: State<Arc<Mutex<SettingsState>>>,
     key: String,
-    value: Value,
+    value: serde_json::Value,
 ) -> Result<String, String> {
     update_settings_field_impl(state.inner().clone(), key, value)
+}
+
+pub fn update_settings_field_impl(
+    state: Arc<Mutex<SettingsState>>,
+    key: String,
+    value: serde_json::Value,
+) -> Result<String, String> {
+    let settings_state = state.lock().unwrap();
+    settings_state
+        .update_setting_field(&key, value)
+        .and_then(|updated| {
+            to_string(&updated).map_err(|e| io::Error::new(io::ErrorKind::Other, e))
+        })
+        .map_err(|e| {
+            Error::new(
+                ErrorCode::InternalError,
+                format!("Failed to update settings field: {}", e),
+            )
+            .to_json()
+        })
 }
 
 /// Updates multiple settings fields at once.
@@ -178,6 +166,25 @@ pub fn update_multiple_settings_command(
     update_multiple_settings_impl(state.inner().clone(), updates)
 }
 
+pub fn update_multiple_settings_impl(
+    state: Arc<Mutex<SettingsState>>,
+    updates: serde_json::Map<String, serde_json::Value>,
+) -> Result<String, String> {
+    let settings_state = state.lock().unwrap();
+    settings_state
+        .update_multiple_settings(&updates)
+        .and_then(|updated| {
+            to_string(&updated).map_err(|e| io::Error::new(io::ErrorKind::Other, e))
+        })
+        .map_err(|e| {
+            Error::new(
+                ErrorCode::InternalError,
+                format!("Failed to update multiple settings: {}", e),
+            )
+            .to_json()
+        })
+}
+
 /// Resets the current settings file and resets settings to their default values.
 ///
 /// reinitializes the in-memory settings state to default values by reusing the default state logic.
@@ -201,17 +208,31 @@ pub fn update_multiple_settings_command(
 /// }
 /// ```
 #[tauri::command]
-pub fn reset_settings_command(
-    state: State<Arc<Mutex<SettingsState>>>
-) -> Result<String, String>{
+pub fn reset_settings_command(state: State<Arc<Mutex<SettingsState>>>) -> Result<String, String> {
     reset_settings_impl(state.inner().clone())
+}
+
+pub fn reset_settings_impl(state: Arc<Mutex<SettingsState>>) -> Result<String, String> {
+    let settings_state = state.lock().unwrap();
+    settings_state
+        .reset_settings()
+        .and_then(|updated| {
+            to_string(&updated).map_err(|e| io::Error::new(io::ErrorKind::Other, e))
+        })
+        .map_err(|e| {
+            Error::new(
+                ErrorCode::InternalError,
+                format!("Failed to reset settings: {}", e),
+            )
+            .to_json()
+        })
 }
 
 #[cfg(test)]
 mod tests_settings_commands {
-    use std::path::PathBuf;
     use super::*;
     use serde_json::json;
+    use std::path::PathBuf;
 
     // Testing: Helper function to create a test SettingsState
     fn create_test_settings_state() -> Arc<Mutex<SettingsState>> {
@@ -302,7 +323,8 @@ mod tests_settings_commands {
     fn test_reset_settings_command_success() {
         let state = create_test_settings_state();
         // Prefix unused variable with underscore
-        let _updated_data = update_settings_field_impl(state.clone(), "darkmode".to_string(), json!(true));
+        let _updated_data =
+            update_settings_field_impl(state.clone(), "darkmode".to_string(), json!(true));
 
         let result = reset_settings_impl(state.clone());
         assert!(result.is_ok());
@@ -311,4 +333,3 @@ mod tests_settings_commands {
         assert_eq!(darkmode, json!(false));
     }
 }
-

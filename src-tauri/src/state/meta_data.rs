@@ -1,14 +1,19 @@
-use crate::{constants, log_error};
-use serde::{Deserialize, Serialize};
-use home::home_dir;
 use crate::commands::volume_operations_commands;
 use crate::models::VolumeInformation;
+use crate::{constants, log_error};
+use home::home_dir;
+use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::{fs, io};
 
+/// Application metadata and system information.
+///
+/// This struct stores essential application configuration data,
+/// system information, and paths to important application resources.
+/// It is serialized to a JSON configuration file for persistence.
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct MetaData {
     version: String,
@@ -19,9 +24,20 @@ pub struct MetaData {
     all_volumes_with_information: Vec<VolumeInformation>,
     current_running_os: String,
     current_cpu_architecture: String,
-    user_home_dir: String
+    user_home_dir: String,
 }
 impl Default for MetaData {
+    /// Creates a new MetaData instance with default values.
+    ///
+    /// This method initializes metadata with:
+    /// 1. The current application version
+    /// 2. Default file paths for configuration and templates
+    /// 3. Current system information (volumes, OS, architecture)
+    /// 4. User's home directory
+    ///
+    /// # Returns
+    ///
+    /// A new MetaData instance populated with default values
     fn default() -> Self {
         MetaData {
             version: constants::VERSION.to_owned(),
@@ -33,15 +49,27 @@ impl Default for MetaData {
                 volume_operations_commands::get_system_volumes_information(),
             current_running_os: std::env::consts::OS.to_string(),
             current_cpu_architecture: std::env::consts::ARCH.to_string(),
-            user_home_dir: home_dir().unwrap_or(PathBuf::from("")).to_string_lossy().to_string(),
+            user_home_dir: home_dir()
+                .unwrap_or(PathBuf::from(""))
+                .to_string_lossy()
+                .to_string(),
         }
     }
 }
 
+/// Loads template paths from the templates directory.
+///
+/// This function reads all files in the templates directory and returns
+/// their paths. If the directory doesn't exist, it creates an empty one.
+///
+/// # Returns
+///
+/// A vector of PathBuf objects pointing to templates, or an empty vector
+/// if the directory doesn't exist or can't be read
 fn load_templates() -> Vec<PathBuf> {
     let templates_path = constants::TEMPLATES_ABS_PATH_FOLDER.to_path_buf();
     if templates_path.exists() {
-        std::fs::read_dir(templates_path)
+        fs::read_dir(templates_path)
             .unwrap()
             .filter_map(|entry| entry.ok())
             .map(|entry| entry.path())
@@ -50,22 +78,57 @@ fn load_templates() -> Vec<PathBuf> {
         //create the empty folder
         fs::create_dir_all(templates_path)
             .map_err(|e| {
-                log_error!(format!("Failed to create templates folder. Error: {}", e).as_str());
+                log_error!("Failed to create templates folder. Error: {}", e);
             })
             .unwrap();
         vec![]
     }
 }
 
+/// Thread-safe container for application metadata.
+///
+/// Provides synchronized access to application metadata through
+/// a mutex-protected shared state, with methods for reading and
+/// writing metadata to persistent storage.
 pub struct MetaDataState(pub Arc<Mutex<MetaData>>);
+
 impl MetaDataState {
+    /// Creates a new MetaDataState with default metadata.
+    ///
+    /// Initializes a new metadata state, writes the default metadata to disk,
+    /// and returns the state wrapped in thread-safe containers.
+    ///
+    /// # Returns
+    ///
+    /// A new MetaDataState instance with default metadata
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let metadata_state = MetaDataState::new();
+    /// ```
     pub fn new() -> Self {
         Self(Arc::new(Mutex::new(
             Self::write_default_meta_data_to_file_and_save_in_state(),
         )))
     }
 
-    // For testing - allows creating a MetaDataState with a custom path
+    /// Creates a new MetaDataState with a custom file path for testing.
+    ///
+    /// # Arguments
+    ///
+    /// * `path` - The file path where metadata will be stored
+    ///
+    /// # Returns
+    ///
+    /// A new MetaDataState instance configured with the specified path
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let test_path = PathBuf::from("test_metadata.json");
+    /// let metadata_state = MetaDataState::new_with_path(test_path);
+    /// ```
     #[cfg(test)]
     pub fn new_with_path(path: PathBuf) -> Self {
         let mut defaults = MetaData::default();
@@ -75,7 +138,22 @@ impl MetaDataState {
         )))
     }
 
-    /// Updates the volume information in the metadata
+    /// Updates volume information in the metadata.
+    ///
+    /// Refreshes the list of volumes and their metadata to reflect
+    /// the current system state, and writes the updated metadata to disk.
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(())` - If volumes were successfully refreshed
+    /// * `Err(io::Error)` - If there was an error writing metadata to disk
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let metadata_state = MetaDataState::new();
+    /// metadata_state.refresh_volumes()?;
+    /// ```
     pub fn refresh_volumes(&self) -> io::Result<()> {
         let mut meta_data = self.0.lock().unwrap();
         meta_data.all_volumes_with_information =
@@ -83,13 +161,49 @@ impl MetaDataState {
         self.write_meta_data_to_file(&meta_data)
     }
 
+    /// Updates the list of available templates.
+    ///
+    /// Rescans the templates directory and updates the metadata with
+    /// the current list of templates, then writes the updated metadata to disk.
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(())` - If template paths were successfully updated
+    /// * `Err(io::Error)` - If there was an error writing metadata to disk
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let metadata_state = MetaDataState::new();
+    /// metadata_state.update_template_paths()?;
+    /// ```
     pub fn update_template_paths(&self) -> io::Result<()> {
         let mut meta_data = self.0.lock().unwrap();
         meta_data.template_paths = load_templates();
         self.write_meta_data_to_file(&meta_data)
     }
 
-    /// Writes the current metadata to file
+    /// Writes the current metadata to file.
+    ///
+    /// Serializes the metadata to JSON format and saves it to the
+    /// configured file path, creating parent directories if needed.
+    ///
+    /// # Arguments
+    ///
+    /// * `meta_data` - A reference to the MetaData to be saved
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(())` - If the metadata was successfully written
+    /// * `Err(io::Error)` - If there was an error creating directories, opening the file, or writing to it
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let metadata_state = MetaDataState::new();
+    /// let metadata = metadata_state.0.lock().unwrap().clone();
+    /// metadata_state.write_meta_data_to_file(&metadata)?;
+    /// ```
     pub fn write_meta_data_to_file(&self, meta_data: &MetaData) -> io::Result<()> {
         let user_config_file_path = &meta_data.abs_file_path_buf;
         let serialized = serde_json::to_string_pretty(&meta_data)
@@ -97,7 +211,7 @@ impl MetaDataState {
 
         // Makes sure the parent directory exists
         if let Some(parent) = user_config_file_path.parent() {
-            std::fs::create_dir_all(parent)?;
+            fs::create_dir_all(parent)?;
         }
 
         // Write to the file
@@ -106,12 +220,44 @@ impl MetaDataState {
         Ok(())
     }
 
+    /// Creates default metadata and writes it to file.
+    ///
+    /// This is a helper method that creates default metadata
+    /// and persists it to disk.
+    ///
+    /// # Returns
+    ///
+    /// The created MetaData instance with default values
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let default_metadata = MetaDataState::write_default_meta_data_to_file_and_save_in_state();
+    /// ```
     fn write_default_meta_data_to_file_and_save_in_state() -> MetaData {
         let defaults = MetaData::default();
         Self::write_meta_data_to_file_and_save_in_state(defaults)
     }
 
-    // Helper method to write metadata to a file
+    /// Helper method to write metadata to a file and return the metadata instance.
+    ///
+    /// This method creates a metadata state with the provided defaults, writes them to file,
+    /// and returns the metadata instance.
+    ///
+    /// # Arguments
+    ///
+    /// * `defaults` - The MetaData instance to be written to file
+    ///
+    /// # Returns
+    ///
+    /// The provided MetaData instance
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let metadata = MetaData::default();
+    /// let saved_metadata = MetaDataState::write_meta_data_to_file_and_save_in_state(metadata);
+    /// ```
     fn write_meta_data_to_file_and_save_in_state(defaults: MetaData) -> MetaData {
         let meta_data_state = Self(Arc::new(Mutex::new(defaults.clone())));
 
@@ -122,7 +268,26 @@ impl MetaDataState {
         defaults
     }
 
-    // For testing - read metadata from file
+    /// Reads metadata from a file.
+    ///
+    /// This method is used primarily for testing to verify that metadata
+    /// was correctly written to and can be read from a file.
+    ///
+    /// # Arguments
+    ///
+    /// * `path` - The file path from which to read metadata
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(MetaData)` - The deserialized MetaData instance if successful
+    /// * `Err(io::Error)` - If there was an error reading or parsing the file
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let path = PathBuf::from("metadata.json");
+    /// let metadata = MetaDataState::read_meta_data_from_file(&path)?;
+    /// ```
     #[cfg(test)]
     pub fn read_meta_data_from_file(path: &PathBuf) -> io::Result<MetaData> {
         use std::io::Read;
@@ -148,12 +313,21 @@ mod metadata_tests {
             constants::META_DATA_CONFIG_ABS_PATH.to_path_buf()
         );
         // Check the OS and architecture fields
-        assert_eq!(meta_data.current_running_os, std::env::consts::OS.to_string());
-        assert_eq!(meta_data.current_cpu_architecture, std::env::consts::ARCH.to_string());
+        assert_eq!(
+            meta_data.current_running_os,
+            std::env::consts::OS.to_string()
+        );
+        assert_eq!(
+            meta_data.current_cpu_architecture,
+            std::env::consts::ARCH.to_string()
+        );
         // Check the home directory field
         assert_eq!(
             meta_data.user_home_dir,
-            home_dir().unwrap_or(PathBuf::from("")).to_string_lossy().to_string()
+            home_dir()
+                .unwrap_or(PathBuf::from(""))
+                .to_string_lossy()
+                .to_string()
         );
         // Cannot test volume information directly as it depends on the system
     }
@@ -185,12 +359,21 @@ mod metadata_tests {
             constants::SETTINGS_CONFIG_ABS_PATH.to_path_buf()
         );
         // Check the OS and architecture fields
-        assert_eq!(meta_data.current_running_os, std::env::consts::OS.to_string());
-        assert_eq!(meta_data.current_cpu_architecture, std::env::consts::ARCH.to_string());
+        assert_eq!(
+            meta_data.current_running_os,
+            std::env::consts::OS.to_string()
+        );
+        assert_eq!(
+            meta_data.current_cpu_architecture,
+            std::env::consts::ARCH.to_string()
+        );
         // Check the home directory field
         assert_eq!(
             meta_data.user_home_dir,
-            home_dir().unwrap_or(PathBuf::from("")).to_string_lossy().to_string()
+            home_dir()
+                .unwrap_or(PathBuf::from(""))
+                .to_string_lossy()
+                .to_string()
         );
     }
 
@@ -242,12 +425,12 @@ mod metadata_tests {
         let mut meta_data = MetaData::default();
         meta_data.abs_file_path_buf = test_path.clone();
         meta_data.version = "test-version".to_string();
-        
+
         // Customize the OS, CPU, and home directory fields for testing
         let test_os = "test-os".to_string();
         let test_arch = "test-arch".to_string();
         let test_home = "/test/home/path".to_string();
-        
+
         meta_data.current_running_os = test_os.clone();
         meta_data.current_cpu_architecture = test_arch.clone();
         meta_data.user_home_dir = test_home.clone();
@@ -269,11 +452,10 @@ mod metadata_tests {
             meta_data.abs_file_path_for_settings_json,
             constants::SETTINGS_CONFIG_ABS_PATH.to_path_buf()
         );
-        
+
         // Verify the custom OS, CPU, and home directory fields
         assert_eq!(read_meta_data.current_running_os, test_os);
         assert_eq!(read_meta_data.current_cpu_architecture, test_arch);
         assert_eq!(read_meta_data.user_home_dir, test_home);
     }
 }
-

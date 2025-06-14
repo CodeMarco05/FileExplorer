@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use crate::state::SettingsState;
 use crc32fast::Hasher;
 use md5::{Digest as Md5Digest, Md5 as Md5Hasher};
@@ -42,14 +43,15 @@ impl FromStr for ChecksumMethod {
     }
 }
 
-impl ToString for HashError {
-    fn to_string(&self) -> String {
-        match self {
+impl Display for HashError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let str = match self {
             HashError::SettingsLockError => "Failed to access settings".to_string(),
             HashError::InvalidChecksumMethod => "Invalid checksum method".to_string(),
             HashError::FileOperationError => "File operation failed".to_string(),
             HashError::ClipboardError => "Failed to copy to clipboard".to_string(),
-        }
+        };
+        write!(f, "{}", str)
     }
 }
 
@@ -61,7 +63,7 @@ async fn get_checksum_method(
         .0
         .lock()
         .map_err(|_| HashError::SettingsLockError)?;
-    Ok(inner_settings.default_checksum_hash.clone())
+    Ok(inner_settings.backend_settings.default_checksum_hash.clone())
 }
 
 fn calculate_md5(data: &[u8]) -> String {
@@ -121,23 +123,6 @@ async fn read_file(path: &Path) -> Result<Vec<u8>, HashError> {
     Ok(buffer)
 }
 
-pub async fn gen_hash_and_return_string_impl(
-    path: String,
-    state: Arc<Mutex<SettingsState>>,
-) -> Result<String, String> {
-    let checksum_method = get_checksum_method(state)
-        .await
-        .map_err(|e| e.to_string())?;
-    let data = read_file(Path::new(&path))
-        .await
-        .map_err(|e| e.to_string())?;
-    let hash = calculate_hash(checksum_method, &data)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    Ok(hash)
-}
-
 /// Generates a hash for the given file and returns it as a string.
 /// The hash algorithm used is determined by the application settings (MD5, SHA256, SHA384, SHA512, or CRC32).
 ///
@@ -165,24 +150,19 @@ pub async fn gen_hash_and_return_string(
     gen_hash_and_return_string_impl(path, state.inner().clone()).await
 }
 
-pub async fn gen_hash_and_save_to_file_impl(
-    source_path: String,
-    output_path: String,
+pub async fn gen_hash_and_return_string_impl(
+    path: String,
     state: Arc<Mutex<SettingsState>>,
 ) -> Result<String, String> {
     let checksum_method = get_checksum_method(state)
         .await
         .map_err(|e| e.to_string())?;
-    let data = read_file(Path::new(&source_path))
+    let data = read_file(Path::new(&path))
         .await
         .map_err(|e| e.to_string())?;
     let hash = calculate_hash(checksum_method, &data)
         .await
         .map_err(|e| e.to_string())?;
-
-    tokio::fs::write(output_path, hash.as_bytes())
-        .await
-        .map_err(|_| "Failed to write hash to file".to_string())?;
 
     Ok(hash)
 }
@@ -216,22 +196,26 @@ pub async fn gen_hash_and_save_to_file(
     gen_hash_and_save_to_file_impl(source_path, output_path, state.inner().clone()).await
 }
 
-pub async fn compare_file_or_dir_with_hash_impl(
-    path: String,
-    hash_to_compare: String,
+pub async fn gen_hash_and_save_to_file_impl(
+    source_path: String,
+    output_path: String,
     state: Arc<Mutex<SettingsState>>,
-) -> Result<bool, String> {
+) -> Result<String, String> {
     let checksum_method = get_checksum_method(state)
         .await
         .map_err(|e| e.to_string())?;
-    let data = read_file(Path::new(&path))
+    let data = read_file(Path::new(&source_path))
         .await
         .map_err(|e| e.to_string())?;
-    let calculated_hash = calculate_hash(checksum_method, &data)
+    let hash = calculate_hash(checksum_method, &data)
         .await
         .map_err(|e| e.to_string())?;
 
-    Ok(calculated_hash.eq_ignore_ascii_case(&hash_to_compare))
+    tokio::fs::write(output_path, hash.as_bytes())
+        .await
+        .map_err(|_| "Failed to write hash to file".to_string())?;
+
+    Ok(hash)
 }
 
 /// Compares a file's generated hash with a provided hash value.
@@ -263,6 +247,24 @@ pub async fn compare_file_or_dir_with_hash(
     compare_file_or_dir_with_hash_impl(path, hash_to_compare, state.inner().clone()).await
 }
 
+pub async fn compare_file_or_dir_with_hash_impl(
+    path: String,
+    hash_to_compare: String,
+    state: Arc<Mutex<SettingsState>>,
+) -> Result<bool, String> {
+    let checksum_method = get_checksum_method(state)
+        .await
+        .map_err(|e| e.to_string())?;
+    let data = read_file(Path::new(&path))
+        .await
+        .map_err(|e| e.to_string())?;
+    let calculated_hash = calculate_hash(checksum_method, &data)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(calculated_hash.eq_ignore_ascii_case(&hash_to_compare))
+}
+
 #[cfg(test)]
 mod tests_hash_commands {
     use super::*;
@@ -285,7 +287,7 @@ mod tests_hash_commands {
         let state = create_test_settings_state();
         let state_guard = state.lock().unwrap();
         state_guard
-            .update_setting_field("default_checksum_hash", json!(method))
+            .update_setting_field("backend_settings.default_checksum_hash", json!(method))
             .unwrap();
         state.clone()
     }
@@ -501,12 +503,11 @@ mod tests_hash_commands {
         for method in methods {
             let state_guard = state.lock().unwrap();
             state_guard
-                .update_setting_field("default_checksum_hash", json!(method.clone()))
+                .update_setting_field("backend_settings.default_checksum_hash", json!(method.clone()))
                 .unwrap();
             drop(state_guard);
 
-            let result =
-                gen_hash_and_return_string_impl(file_path.clone(), state.clone()).await;
+            let result = gen_hash_and_return_string_impl(file_path.clone(), state.clone()).await;
 
             assert!(result.is_ok(), "Hash generation failed for {:?}", method);
         }
