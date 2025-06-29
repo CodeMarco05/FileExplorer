@@ -4,7 +4,7 @@ State Beispiel
 \large
 
 Rust Code:
-
+{\small
 \begin{verbatim}
 use tauri::State;
 struct MyState(String);
@@ -20,8 +20,11 @@ fn main() {
         .expect("error while running tauri application");
 }
 \end{verbatim}
+}
+
 
 Frontend in Typescript
+{\small
 
 \begin{verbatim}
 'use client';
@@ -44,6 +47,7 @@ export default function GetStateExample() {
   );
 }
 \end{verbatim}
+}
 
 
 \begin{figure}[htbp]

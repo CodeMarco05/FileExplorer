@@ -1,5 +1,12 @@
-\section{Daten vom Backend zum Frontend}
+\section{Datenverarbeitung}
 
+Die Verarbeitung und Speicherung von Daten bildet das Herzstück jeder Software, denn sie entscheidet
+maßgeblich darüber, wie einfach und effizient eine Anwendung genutzt werden kann. Insbesondere bei
+Anwendungen, die eng mit der Dateiverwaltung verbunden sind, spielt der schnelle und problemlose
+Datenaustausch zwischen Frontend und Backend eine wesentliche Rolle.
+
+
+\subsection{Datenaustausch Backend - Frontend}
 Die Datenverarbeitung findet hauptsächlich im Backend statt, das im Framework Tauri \cite{tauri2025} durch in Rust geschriebenen
 Code realisiert wird. Das Frontend kann Methoden aufrufen, und über die asynchrone Runtime können Daten an das Frontend
 übermittelt werden. Dies ist relativ unkompliziert über JSON oder auch mit primitiven Datentypen möglich. Wenn jedoch
@@ -11,6 +18,7 @@ Die Methoden, die vom Frontend aus aufgerufen werden können, werden mit dem Att
 Application-Builder hinzugefügt. Jeder Endpoint muss explizit registriert werden. Danach können die Methoden über ihren Namen im
 Frontend aufgerufen werden. Wichtig ist dabei, dass alle Methoden standardmäßig \textit{asynchron} sind.
 
+{\small
 \begin{verbatim}
 #[tauri::command]
 pub async fn open_file(path: &str) -> Result<String, String> {
@@ -27,16 +35,17 @@ return Err(format!(//TODO));
 fs::read_to_string(path).map_err(|err| format!("Failed to read file: {}", err))
 }
 \end{verbatim}
+}
 
 Eine weitere Möglichkeit, um Daten an das Frontend zu übermitteln, bietet der sogenannte \textit{State}
 \cite{tauri_state_management}. Der Vorteil dieser Methode liegt in der zentralisierten Datenspeicherung für das Frontend, welche
 über die gesamte Laufzeit der Applikation hinweg bestehen bleibt. Der State kann jederzeit vom Frontend abgefragt werden. Ein
 Beispiel für die Verwendung des State ist im Anhang zu finden \ref{subsec:state-example}.
 
+\newpage
 Im File Explorer wird unter anderem folgende Datenstruktur über einen solchen State bereitgestellt:
 
-\newpage
-
+{\small
 \begin{verbatim}
 pub struct MetaData {
 version: String,
@@ -50,6 +59,7 @@ current_cpu_architecture: String,
 user_home_dir: String
 }
 \end{verbatim}
+}
 
 Das oben gezeigte \verb|struct| beinhaltet grundlegende Informationen, die entweder über die Applikation selbst gespeichert oder
 aus dem System, auf dem das Programm läuft, ausgelesen werden. Es wird beim Start der Anwendung initialisiert und mithilfe von
@@ -59,3 +69,15 @@ Da das \verb|struct| unter anderem den Typ \verb|PathBuf| verwendet, ergeben sic
 Einschränkungen. Diese Typen lassen sich dort nicht ohne Weiteres abbilden. Ein möglicher Ansatz zur Abbildung besteht im Einsatz
 einer äquivalenten Struktur, wobei jedoch zu beachten ist, dass diese nicht automatisch generiert werden kann.
 
+\subsection{Nutzerdaten}
+Die vom Nutzer erzeugten Daten werden in unserem Projekt persistent im
+Anwendungsverzeichnis neben der ausführbaren Binärdatei abgelegt. Konkret bedeutet das, dass die
+Daten dauerhaft gespeichert sind und bei jedem Neustart der Applikation unverändert wieder zur
+Verfügung stehen. Diese Vorgehensweise bietet für Nutzer große Vorteile, da sämtliche gespeicherten
+Daten jederzeit problemlos eingesehen werden können. Anders als bei versteckten oder komplex
+strukturierten Datenbanken ermöglicht die Speicherung in direkt lesbaren JSON-Dateien, dass Nutzer
+bei eventuellen Problemen oder Unklarheiten eigenständig Anpassungen vornehmen können. Dadurch
+steigt nicht nur die Transparenz, sondern auch die Kontrolle des Nutzers über die eigenen Daten.
+Besonders hilfreich ist dieser Ansatz auch bei der Fehlersuche, da Konfigurationsfehler oder
+inkonsistente Daten leicht entdeckt und behoben werden können. Insgesamt entsteht somit eine
+besonders benutzerfreundliche, flexible und robuste Datenverwaltung.

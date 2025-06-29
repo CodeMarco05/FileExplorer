@@ -1,35 +1,31 @@
 \section{Einleitung}
 
-Die Entwicklung von Software für den eigenen Gebrauch – ausgestattet mit exakt jenen Funktionen, die man sich über Jahre hinweg im
-Alltag gewünscht hat – stellt nicht nur eine kreative, sondern auch eine methodisch interessante Herangehensweise dar.
-Insbesondere im Bereich der Dateiverwaltung, der tagtäglich durch den Einsatz verschiedenster File Explorer geprägt ist, zeigt
-sich ein eklatantes Missverhältnis zwischen praktischer Nutzung und funktionaler Erfüllung. Bestehende Systeme sind oftmals primär
-darauf ausgerichtet, Dateien darzustellen und ein minimales Interface bereitzustellen; tiefergehende Anforderungen moderner
-Nutzerinnen und Nutzer bleiben hingegen häufig unbeachtet.
+Die Entwicklung einer eigenen Software, die genau jene Funktionen besitzt, welche man sich im Alltag
+immer gewünscht hat, bietet spannende Möglichkeiten – sowohl kreativ als auch praktisch. Gerade im
+Bereich der Dateiverwaltung, die jeder täglich nutzt, fällt oft auf, dass Standard-File-Explorer
+häufig nur das Nötigste bieten: Dateien anzeigen und einfache Bedienoberflächen bereitstellen. Dabei
+bleiben viele Anforderungen, die moderne Nutzer wirklich haben, meist unbeachtet.
 
-Die Möglichkeit, einen File Explorer vollständig neu zu denken, eröffnet daher nicht nur den Freiraum zur Integration lang
-ersehnter Funktionen, sondern stellt zugleich ein erkenntnisreiches Experiment im Bereich der Mensch-Computer-Interaktion dar.
-Welche Strukturen, Navigationsprinzipien und Automatisierungsansätze begünstigen tatsächliche Effizienz? Wie lässt sich ein
-Interface gestalten, das nicht nur funktioniert, sondern die Nutzerin bzw. den Nutzer aktiv unterstützt, informiert und entlastet?
-Eine solche Neuentwicklung ist nicht bloß als technischer Fortschritt zu verstehen, sondern als reflektierter Beitrag zur
-Weiterentwicklung alltäglicher Softwarewerkzeuge.
+Genau deshalb war es für uns besonders interessant, selbst einen File Explorer zu entwickeln, der
+unseren eigenen Vorstellungen entspricht. Dieses Projekt gab uns nicht nur die Freiheit, lange
+gewünschte Funktionen einzubauen, sondern ermöglichte auch, ganz praktisch auszuprobieren, welche
+Ansätze tatsächlich hilfreich sind: Wie gestaltet man eine Benutzeroberfläche, die Menschen wirklich
+unterstützt, entlastet und informativ ist? Welche Strukturen und Automatismen sorgen im Alltag für
+echte Effizienz?
 
-Auf das zugrunde liegende Projekt wurden wir durch ein YouTube-Video aufmerksam \cite{connaticus01}, in dem der Autor seine Idee
-eines besonders schnellen File Explorers erläutert.
+Die Idee zu diesem Projekt entstand durch ein YouTube-Video von Connaticus \cite{connaticus01}, in
+dem er seinen Ansatz für einen schnellen File Explorer vorstellt. Da wir persönlichen Kontakt mit
+ihm aufnehmen konnten und er von unserer Beteiligung begeistert war, entschieden wir uns gezielt für
+dieses Projekt. Schon beim ersten Blick auf das Konzept hatten wir konkrete Vorstellungen für
+Erweiterungen, da auch wir selbst bisher viele Funktionen bei existierenden Explorern vermisst
+hatten. Außerdem schildert Connaticus in einem weiteren Video ausführlich die Herausforderungen rund
+um die Suchfunktion \cite{connaticus02}, was wir als interessante Aufgabe ansahen.
 
-Wir haben dieses Projekt gezielt ausgewählt, da wir mit dem Ersteller persönlich Kontakt aufgenommen haben und dieser sich über
-unser Interesse erfreut zeigte. Bereits bei der ersten Auseinandersetzung mit dem Konzept kamen unserem Team konkrete
-Erweiterungsideen, da auch wir bestimmte Funktionen in einem Datei-Explorer vermissen. Zudem erläutert der Autor in einem weiteren
-Video detaillierte Schwierigkeiten im Zusammenhang mit der Suchfunktion \cite{connaticus02}, die wir als spannende Herausforderung
-empfanden.
-
-Das Projekt basiert auf dem Framework Tauri \cite{tauri2025}, das es ermöglicht, Anwendungen in zwei Module zu unterteilen:
-einerseits das User Interface, welches mit den gängigsten Frontend-Frameworks entwickelt werden kann \cite{tauri_frontends},
-andererseits die Verarbeitungsschicht, die in Rust \cite{rust} implementiert wird. Bei der Übernahme des Projekts war das Frontend
-noch nicht vollständig umgesetzt, da der ursprüngliche Fokus auf der Funktionalität lag und weniger auf einer ansprechenden
-Gestaltung. In der Rücksprache mit dem Projektinitiator bestätigte dieser, dass ein ästhetisch überzeugenderes Frontend auch in
-seinem Interesse liege. Aus diesem Grund entschieden wir uns für die Verwendung von React zur Gestaltung der Benutzeroberfläche.
-
-Durch den Einsatz von Rust für die Verarbeitungskomponenten profitieren wir von den bekannten Vorteilen dieser Programmiersprache:
-hoher Laufzeitgeschwindigkeit und effiziente Ressourcennutzung – vorausgesetzt, die Programmierung erfolgt entsprechend
-sorgfältig.
+Technisch basiert unser Projekt auf dem Framework Tauri \cite{tauri2025}, das eine klare Trennung
+der Anwendung ermöglicht: Einerseits gibt es ein Frontend, das mit beliebten Web-Technologien
+entwickelt wird, andererseits die Verarbeitungslogik, die in Rust implementiert ist. Zum Zeitpunkt
+unserer Übernahme war das Frontend noch nicht vollständig fertiggestellt, da der ursprüngliche Fokus
+vor allem auf Funktionalität lag und weniger auf Design und Nutzerfreundlichkeit. Im Austausch mit
+Connaticus bestätigte er uns, dass er ebenfalls Interesse an einer attraktiven Benutzeroberfläche
+habe. Aus diesem Grund haben wir uns entschieden, das Frontend mit React neu und ansprechend zu
+gestalten.

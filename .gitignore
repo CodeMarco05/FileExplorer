@@ -94,3 +94,6 @@ app.log
 /FileExplorerAusarbeitung/*.toc
 /FileExplorerAusarbeitung/*.gz
 /FileExplorerAusarbeitung/*.pdf
+/FileExplorerAusarbeitung/*.bbl-SAVE-ERROR
+/FileExplorerAusarbeitung/*.bcf-SAVE-ERROR
+/FileExplorerAusarbeitung/main.ahv

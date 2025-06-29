@@ -2,7 +2,7 @@
   \ProvidesClass{naklatex}
 
   % Basisklasse laden
-    \LoadClass[10.5pt,a4paper]{article}
+    \LoadClass[11pt,a4paper]{article}
 
   % Pakete
   \RequirePackage[ngerman]{babel}                                             % deutsches Sprachpaket
@@ -28,7 +28,7 @@
 \setstretch{1.2}
 
 % Seitenränder
-\RequirePackage[left=2cm,right=2cm,top=2cm,bottom=2cm,footskip=1cm]{geometry}
+\RequirePackage[left=2.5cm,right=2.cm,top=2cm,bottom=3cm,footskip=1cm]{geometry}
 
 % Seitenumbrüche per Section
 \RequirePackage{titlesec}
