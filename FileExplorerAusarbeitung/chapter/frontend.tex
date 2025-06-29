@@ -1,2 +1,41 @@
-\section{Frontend Änderungen}\label{sec:Frontend Änderungen} 
-Lauritz abfahrt
+\section{Design Philosophie und Inspiration}\label{sec:Design Philosophie und Inspiration} 
+
+\subsection{Die Wahl des macOS Finders als Designgrundlage}
+Bei der Entwicklung unseres File Explorers diente der macOS Finder bewusst als primäre Designinspiration. Ausschlaggebend waren dessen klare Strukturen, minimalistisches Design und eine aufgeräumte Benutzeroberfläche ohne überflüssige Elemente. Besonders der gezielte Einsatz von Whitespace und die klare Hierarchie der Interface-Elemente überzeugten uns. Diese Designsprache unterstützt eine intuitive Navigation und effizientes Arbeiten, ohne durch visuelle Ablenkungen zu stören.
+
+\subsection{Integration bewährter Konzepte aus verschiedenenSystemen}
+Obwohl der macOS Finder unsere Hauptinspiration war, haben wir uns nicht ausschließlich
+darauf beschränkt. Stattdessen haben wir einen selektiven Ansatz verfolgt und nützliche
+Features aus anderen Dateiverwaltungssystemen integriert. Ein besonders gelungenes Beispiel
+ist die Übernahme der "Dieser PC"-Ansicht aus dem Windows Explorer.
+Diese Ansicht bietet einen praktischen Überblick über alle verfügbaren Laufwerke und
+Speichermedien. Wir haben sie jedoch nicht unverändert übernommen, sondern entsprechend
+unserer minimalistischen Designphilosophie angepasst. Das Ergebnis ist eine funktionale
+Lösung, die sich nahtlos in unser Gesamtdesign einfügt und die Vorteile beider Systeme
+kombiniert.
+
+\subsection{Nutzerorientierte Anpassungsmöglichkeiten}
+Ein wichtiger Aspekt unserer Designphilosophie ist die Berücksichtigung individueller
+Nutzerpräferenzen. Deshalb haben wir verschiedene Anpassungsmöglichkeiten
+implementiert, die es jedem Nutzer ermöglichen, den File Explorer nach seinen Bedürfnissen
+zu konfigurieren.
+Der Dark Mode ist dabei eine grundlegende Option, die modernen Erwartungen entspricht
+und bei längerer Nutzung die Augenbelastung reduziert. Darüber hinaus können Nutzer die
+Akzentfarbe individuell anpassen, um eine persönliche Note einzubringen, ohne die
+Designkohärenz zu beeinträchtigen.
+Weitere Anpassungen umfassen die Schriftgröße, was besonders bei verschiedenen
+Bildschirmgrößen und individuellen Sehgewohnheiten hilfreich ist, sowie verschiedene
+Ansichtsmodi, die je nach Arbeitskontext gewählt werden können.
+
+\subsection{Technische Umsetzung und eigenständige Entwicklung}
+Die technische Basis des Frontends bildet React, das uns die notwendige Flexibilität für eine
+moderne und reaktive Benutzeroberfläche bietet. Eine bewusste Entscheidung war die
+Entwicklung eines eigenen CSS-Frameworks anstelle der Nutzung etablierter Lösungen wie
+Bootstrap oder Tailwind CSS.
+Diese Entscheidung ermöglicht uns vollständige Kontrolle über das visuelle Erscheinungsbild
+und stellt sicher, dass jedes Element exakt unseren Designvorstellungen entspricht. Wir sind
+nicht durch externe Framework-Beschränkungen limitiert und können das Design optimal auf
+unsere spezifischen Anforderungen abstimmen.
+Auch die verwendeten Icons haben wir als eigene SVG-Grafiken entwickelt. Dies
+gewährleistet eine perfekte Integration in das Gesamtdesign und optimiert sowohl die
+Ladezeiten als auch die Skalierbarkeit der Anwendung.

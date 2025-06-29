@@ -4,14 +4,14 @@ Der initiale Algorithmus sah vor, das gesamte Dateisystem vor dem Start der Anwe
  Dieses Verfahren ermöglichte eine schnelle Verfügbarkeit von Dateinamen, ging jedoch mit einem erheblichen Ressourcen- und Speicherverbrauch einher.
 Besonders kritisch wirkte sich die Notwendigkeit aus, die Cache-Datei persistent zu speichern und nachträgliche Änderungen am Dateisystem zu erkennen, sofern die Anwendung in der Zwischenzeit nicht aktiv war.
 Eine gezieltere Strategie, etwa das Laden einzelner Unterverzeichnisse, wurde im ursprünglichen Konzept nicht berücksichtigt.
-Aufgrund dieser Schwächen wurde das System grundlegend überarbeitet und durch ein effizienteres Verfahren ersetzt, das im Folgenden beschrieben wird.
+Aufgrund dieser Herausforderungen wurde das System grundlegend überarbeitet und durch ein effizienteres Verfahren ersetzt, das im Folgenden beschrieben wird.
 
 Die neue Suchmaschine bietet eine performante Lösung für die Dateisuche in großen Verzeichnissen.
-Nachfolgend wird ihre Architektur erläutert – von der Kommunikation mit dem Frontend bis hin zu den intern verwendeten Datenstrukturen.
+Nachfolgend wird ihre Architektur von der Kommunikation mit dem Frontend bis hin zu den intern verwendeten Datenstrukturen erläutert.
 \subsection{Architektonischer Aufbau}
 
 Die Suchmaschine folgt einem mehrschichtigen Modell zur Gewährleistung von Modularität, Erweiterbarkeit und Performanz.
-Die Interaktion erfolgt über \verb|Tauri:Commands|, implementiert in \verb|search_engine_commands.rs|.
+Die Interaktion erfolgt über \verb|Tauri:Commands|, die in \verb|search_engine_commands.rs| implementiert sin.
 Wichtige Endpunkte sind:
 
 \begin{itemize}
@@ -21,13 +21,13 @@ Wichtige Endpunkte sind:
   \item \texttt{get\_search\_engine\_info} – Statusinformationen der Suchmaschine
 \end{itemize}
 
-Der zentrale Zustand wird durch \verb|SearchEngineState| in \verb|searchengine_data.rs| verwaltet – ein thread-sicheres \verb|Arc<Mutex<>>|.
-Dieser umfasst Statusinformationen (z.\,B. Indexing, Searching), Fortschrittsmetriken, Leistungsdaten und Konfigurationen.
+Der zentrale Zustand wird durch \verb|SearchEngineState| in \verb|searchengine_data.rs| durch ein thread-sicheres \verb|Arc<Mutex<>>| verwaltet.
+Dieser umfasst die Statusinformationen (z.\,B. Indexing, Searching), Fortschrittsmetriken, Leistungsdaten und Konfigurationen.
 Zudem enthält er die \verb|AutocompleteEngine|, welche die eigentliche Such- und Indexierungslogik kapselt und alle Kernkomponenten koordiniert.
 
 Der Ablauf des Suchprozesses ist in Abbildung~\ref{fig:searchEngine}
 schematisch dargestellt und verdeutlicht das Zusammenspiel der einzelnen Komponenten
-innerhalb der \textit{AutocompleteEngine} – vom Eingang der Suchanfrage bis zur finalen Ergebnisliste.
+innerhalb der AutocompleteEngine vom Eingang der Suchanfrage bis zur finalen Ergebnisliste.
 
 Die \verb|AutocompleteEngine| setzt sich aus mehreren zentralen Komponenten zusammen: dem Adaptive Radix Trie (ART) als primäre Suchstruktur, einer Fuzzy-Suche als Fallback-Mechanismus, einem LRU-basierten Cache zur Zwischenspeicherung häufiger Anfragen sowie einem kontextbasierten Ranker zur situationsabhängigen Gewichtung der Ergebnisse.
 
@@ -44,8 +44,7 @@ und von dort aus alle relevanten Pfade extrahiert.
 Jeder Eintrag kann mit einem Score versehen werden, der für die Sortierung und das Ranking der Suchergebnisse genutzt wird.
 Die Ergebnisse werden nach Score sortiert und bei Bedarf dedupliziert.
 
-Das Entfernen von Pfaden ist ebenfalls effizient:
-Der ART schrumpft automatisch, wenn Einträge entfernt werden, indem Knotentypen verkleinert oder zusammengeführt werden.
+Das Entfernen von Pfaden ist ebenfalls effizient: Wenn Einträge entfert werden, dann schrumpft der ART automatisch, indem Knotentypen verkleinert oder zusammengeführt werden.
 Die Implementierung unterstützt zudem das vollständige Leeren des Tries
 sowie die Begrenzung der maximalen Ergebnisanzahl bei Suchanfragen.
 
@@ -57,18 +56,18 @@ und ermöglicht eine nahezu logarithmische Skalierung der Zugriffszeiten.
 Benchmarks belegen, dass selbst bei einer Steigerung der Pfadanzahl von 10 auf über 170.000
 die durchschnittliche Suchzeit lediglich von 1{,}6\,\textmu s auf 22{,}9\,\textmu s anwächst.
 Dies entspricht einer sub-linearen Skalierung,
-die im praktischen Verhalten zwischen $\mathcal{O}(\log n)$ und $\mathcal{O}(n^a)$ (mit $a \ll 1$) liegt (siehe Abbildung~\ref{fig:ART_time_complexity}).
+die im praktischen Verhalten zwischen $\mathcal{O}(\log n)$ und $\mathcal{O}(n^a)$ (mit $a \ll 1$) liegt (Abbildung~\ref{fig:ART_time_complexity}).
 
-Im Vergleich zu typischen ART-Implementierungen oder alternativen Strukturen wie linearem Scan oder naiven Tries
+Im Vergleich zu typischen ART-Implementierungen oder alternativen Strukturen wie einem linearem Scan oder naiven Tries
 zeigt sich die Implementierung in \verb|art_v5.rs| als besonders effizient.
 Sie skaliert in der Praxis deutlich besser als $\mathcal{O}(n)$ oder $\mathcal{O}(n \log n)$
-und liefert selbst bei großen Datenmengen in Millisekundenbruchteilen konsistente, sortierte Ergebnisse.
+und liefert selbst bei großen Datenmengen in Millisekundenbruchteilen konsistente und sortierte Ergebnisse.
 Damit bildet sie das performante Rückgrat der Suchmaschine für sämtliche Präfix- und Komponentensuchen.
 
 Zur Ergänzung der Präfixsuche kommt ein auf Trigrammen basierender Fuzzy-Suchalgorithmus zum Einsatz,
 der in \verb|fast_fuzzy_v2.rs| implementiert ist.
-Der sogenannte \textbf{Fast Fuzzy Matcher} wird aktiv, wenn die durch die Präfixsuche gelieferten Ergebnisse nicht ausreichen
-oder unscharfe Anfragen mit Tippfehlern, Auslassungen oder Transpositionen gestellt werden.
+Der sogenannte Fast Fuzzy Matcher wird aktiv, wenn die durch die Präfixsuche gelieferten Ergebnisse nicht ausreichen
+oder uneindeutige Anfragen mit Tippfehlern, Auslassungen oder Transpositionen gestellt werden.
 
 Technisch basiert der Matcher auf einem Trigram-Index, in dem für jeden Pfad sämtliche 3-Zeichen-Kombinationen gespeichert werden.
 Dieser erlaubt eine schnelle Einschränkung des Suchraums auf Kandidaten mit hoher trigrammatischer Ähnlichkeit.
@@ -76,19 +75,18 @@ Zur Verbesserung der Fehlertoleranz werden zudem Varianten der Suchanfrage gener
 Die Auswahl und Sortierung der Ergebnisse erfolgt über ein gewichtetes Scoring, das u.\,a.\ die Überlappung der Trigramme und die relative Position der Übereinstimmungen berücksichtigt.
 
 Dabei zeigt sich eine empirisch bestätigte sub-lineare Zeitkomplexität von $\mathcal{O}(n^a)$ mit $a \approx 0{,}5$ bis $0{,}7$,
-was selbst bei stark wachsendem Datenbestand eine praktikable Performance garantiert (siehe Abbildung~\ref{fig:fuzzy_time_complexity}).
+was selbst bei stark wachsendem Datenbestand eine praktikable Performance garantiert (Abbildung~\ref{fig:fuzzy_time_complexity}).
 Im Vergleich zu klassischen Algorithmen wie Levenshtein (O(N·M²)) oder regulären Ausdrücken (O(N·Q)) bietet der Trigram-Ansatz eine deutlich bessere Skalierbarkeit
 und eignet sich damit besonders für große Dateisammlungen.
 
 Zur Beschleunigung häufig wiederkehrender Anfragen kommt ein \textbf{PathCache} mit \textbf{LRU-Strategie} zum Einsatz.
-Er kombiniert eine HashMap mit einer doppelt verketteten Liste für Zugriffszeiten in $\mathcal{O}(1)$ (siehe Abbildung~\ref{fig:lru_time_complexity}) und unterstützt optional TTL-basierte Einträge.
-Zugriffszeiten liegen im Bereich von 57\,ns bis 265\,ns (je nach Cache-Größe), wobei der Cache mutex-geschützt ist. 
+Er kombiniert eine HashMap mit einer doppelt verketteten Liste für Zugriffszeiten in $\mathcal{O}(1)$ (Abbildung~\ref{fig:lru_time_complexity}) und unterstützt optional TTL-basierte Einträge.
+Zugriffszeiten liegen je nach Cache-Größe im Bereich von 57\,ns bis 265\,ns, wobei der Cache mutex-geschützt ist. 
 
-Ein \textbf{kontextbasiertes Ranking} priorisiert Ergebnisse zusätzlich anhand situativer Merkmale wie aktuellem Arbeitsverzeichnis, bevorzugten Dateitypen oder Nutzungshistorie.
+Ein kontextbasiertes Ranking priorisiert die Ergebnisse zusätzlich anhand situativer Merkmale wie dem aktuellem Arbeitsverzeichnis, bevorzugten Dateitypen oder Nutzungshistorie.
 Die finale Bewertung erfolgt durch ein mehrstufiges, normalisiertes Scoring-Modell (Sigmoid), wodurch besonders relevante Ergebnisse nach oben sortiert werden.
 
-Diese Komponenten arbeiten eng zusammen, um eine robuste, fehlertolerante und gleichzeitig performante Dateisuche zu ermöglichen – auch bei sehr großen und dynamischen Verzeichnisstrukturen\dots
+Diese Komponenten arbeiten eng zusammen und ermöglichen eine robuste, fehlertolerante und gleichzeitig performante Dateisuche auch bei sehr großen und dynamischen Verzeichnisstrukturen\dots
 
-\textbf{Zusammenfassend:}
-Die Kombination aus ART als Hauptindex, Fast Fuzzy Matcher zur Fehlerkompensation, LRU-Cache für wiederholte Anfragen und kontextabhängiger Ergebnisgewichtung bildet eine leistungsfähige Gesamtlösung.
+Im Ergebnis bildet die Kombination aus ART als Hauptindex, Fast Fuzzy Matcher zur Fehlerkompensation, LRU-Cache für wiederholte Anfragen und kontextabhängiger Ergebnisgewichtung eine leistungsfähige Gesamtlösung.
 Die Implementierung erreicht durchgehend kurze Antwortzeiten und lässt sich flexibel anpassen, was sie zur geeigneten Basis für moderne Dateiexplorer macht.
