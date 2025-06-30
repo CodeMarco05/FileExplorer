@@ -90,3 +90,6 @@ Diese Komponenten arbeiten eng zusammen und ermöglichen eine robuste, fehlertol
 
 Im Ergebnis bildet die Kombination aus ART als Hauptindex, Fast Fuzzy Matcher zur Fehlerkompensation, LRU-Cache für wiederholte Anfragen und kontextabhängiger Ergebnisgewichtung eine leistungsfähige Gesamtlösung.
 Die Implementierung erreicht durchgehend kurze Antwortzeiten und lässt sich flexibel anpassen, was sie zur geeigneten Basis für moderne Dateiexplorer macht.
+
+Aufgrund von Zeitmangel konnte der Searchalgorithmus im Frontend nicht komplett eingebettet werden. Daran wird jedoch aktiv gearbeitet und insbesondere im Backend sind 
+hierfür alle Konnektoren vorhanden. Ein Punkt der Verbesserung ist das lösen der fehlenden Zugriffsrechte, sobald das Programm selbstständig auf das Filesystem des Users zugreifen möchte.
