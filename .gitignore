@@ -1,3 +1,5 @@
+/src-tauri/test-data*/
+
 # General Rust ignores
 /target/
 /Cargo.lock
@@ -16,7 +18,6 @@
 # Tauri-specific ignores
 /src-tauri/target/
 /src-tauri/.tauri-build
-/src-tauri/tauri.conf.json
 /src-tauri/tauri.conf.json.bak
 /src-tauri/gen/
 
@@ -45,7 +46,7 @@
 /.vscode/
 /.idea/
 /*.iml
-/.DS_Store
+**/.DS_Store
 /.env
 /.env.local
 /.env.*.local
@@ -61,3 +62,37 @@
 *.swp
 *.swo
 *~
+
+
+# Ignore custom path for files
+/src-tauri/config
+/config
+app.log
+
+# Ignore test data
+/src-tauri/test-data*/
+
+# Ingnore meta_data and settings
+/config/meta_data.json
+/config/settings.json
+
+# Ignore logs
+/logs/*
+
+# for the latex stuff
+/FileExplorerAusarbeitung/*.acn
+/FileExplorerAusarbeitung/*.acr
+/FileExplorerAusarbeitung/*.alg
+/FileExplorerAusarbeitung/*.aux
+/FileExplorerAusarbeitung/*.bcf
+/FileExplorerAusarbeitung/*.fdb_latexmk
+/FileExplorerAusarbeitung/*.fls
+/FileExplorerAusarbeitung/*.glg
+/FileExplorerAusarbeitung/*.glo
+/FileExplorerAusarbeitung/*.gls
+/FileExplorerAusarbeitung/*.ist
+/FileExplorerAusarbeitung/*.lof
+/FileExplorerAusarbeitung/*.log
+/FileExplorerAusarbeitung/*.out
+/FileExplorerAusarbeitung/*.xml
+/FileExplorerAusarbeitung/*.toc

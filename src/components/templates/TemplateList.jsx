@@ -1,329 +1,435 @@
-import React, { useState, useEffect } from 'react';
-import { Button, Modal, ModalFooter } from '../common';
+import React, { useState, useEffect, useRef } from 'react';
+import { invoke } from '@tauri-apps/api/core';
+import Button from '../common/Button';
+import IconButton from '../common/IconButton';
+import Modal from '../common/Modal';
 import TemplateItem from './TemplateItem';
+import EmptyState from '../explorer/EmptyState';
+import { useHistory } from '../../providers/HistoryProvider';
 import { useFileSystem } from '../../providers/FileSystemProvider';
-import { useAppState } from '../../providers/AppStateProvider';
+import { getTemplatePaths, useTemplate, removeTemplate, addTemplate } from '../../utils/fileOperations';
+import { showError, showSuccess } from '../../utils/NotificationSystem';
+import './templates.css';
 
 /**
- * Komponente zur Anzeige und Verwaltung von Templates
+ * TemplateList component - Displays and manages file and folder templates
+ * Allows users to save, apply, and remove templates for reuse
  *
- * @param {Object} props - Die Komponenten-Props
- * @param {string} [props.currentPath] - Aktueller Pfad für das Anwenden von Templates
+ * @param {Object} props - Component props
+ * @param {Function} props.onClose - Callback function when the template list is closed
+ * @returns {React.ReactElement} TemplateList component
  */
-const TemplateList = ({ currentPath }) => {
-    const { getTemplates, applyTemplate } = useFileSystem();
-    const { actions } = useAppState();
-
+const TemplateList = ({ onClose }) => {
     const [templates, setTemplates] = useState([]);
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [categories, setCategories] = useState([]);
-    const [selectedCategory, setSelectedCategory] = useState('all');
-    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedTemplate, setSelectedTemplate] = useState(null);
+    const [isUseModalOpen, setIsUseModalOpen] = useState(false);
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [destinationPath, setDestinationPath] = useState('');
+    const [newTemplatePath, setNewTemplatePath] = useState('');
+    const { currentPath } = useHistory();
+    const { loadDirectory } = useFileSystem();
+    const addTemplateInputRef = useRef(null);
 
-    // Template, das angewendet werden soll
-    const [templateToApply, setTemplateToApply] = useState(null);
-    const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
-    const [applyPath, setApplyPath] = useState('');
-    const [isApplying, setIsApplying] = useState(false);
+    /**
+     * Convert template paths to template objects
+     * @param {Array<string>} templatePaths - Array of template paths
+     * @returns {Array<Object>} Array of template objects
+     */
+    const convertPathsToTemplates = (templatePaths) => {
+        if (!Array.isArray(templatePaths)) {
+            console.error('Expected array of template paths, got:', templatePaths);
+            return [];
+        }
 
-    // Template, das gelöscht werden soll
-    const [templateToDelete, setTemplateToDelete] = useState(null);
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-    const [isDeleting, setIsDeleting] = useState(false);
+        return templatePaths.map((path, index) => {
+            // Handle case where path might already be an object
+            if (typeof path === 'object' && path !== null) {
+                return path;
+            }
 
-    // Lade Templates
+            // Convert string path to template object
+            if (typeof path !== 'string') {
+                console.error('Invalid template path:', path);
+                return null;
+            }
+
+            const pathSegments = path.split(/[/\\]/);
+            const name = pathSegments[pathSegments.length - 1] || `Template ${index + 1}`;
+
+            // Determine if it's a file or folder based on extension
+            const hasExtension = name.includes('.') && !name.startsWith('.');
+            const type = hasExtension ? 'file' : 'folder';
+
+            return {
+                name: name,
+                path: path,
+                type: type,
+                size: 0, // We don't have size info from paths
+                createdAt: new Date().toISOString().split('T')[0] // Default to today
+            };
+        }).filter(template => template !== null); // Remove any null entries
+    };
+
+    /**
+     * Load templates on component mount
+     * Also sets up event listener for template updates
+     */
     useEffect(() => {
         const loadTemplates = async () => {
             setIsLoading(true);
             setError(null);
 
             try {
-                // [Backend Integration] - Templates vom Backend abrufen
-                // /* BACKEND_INTEGRATION: Templates laden */
+                console.log('Loading templates from backend...');
+                const templatePaths = await getTemplatePaths();
+                console.log('Raw template paths from backend:', templatePaths);
 
-                // Beispieldaten
+                const templateObjects = convertPathsToTemplates(templatePaths);
+                console.log('Converted template objects:', templateObjects);
+
+                setTemplates(templateObjects);
+            } catch (err) {
+                console.error('Failed to load templates:', err);
+                setError('Failed to load templates. Please try again.');
+
+                // Mock data for development - properly structured
                 const mockTemplates = [
                     {
-                        id: '1',
-                        name: 'Projektordner',
-                        description: 'Standardordnerstruktur für neue Projekte',
-                        category: 'Projekte',
-                        type: 'directory',
-                        createdAt: '2023-01-15T10:30:00Z',
-                        path: '/templates/projektordner'
+                        name: 'Project Template',
+                        path: '/templates/project-template',
+                        type: 'folder',
+                        size: 2048,
+                        createdAt: '2023-04-15'
                     },
                     {
-                        id: '2',
-                        name: 'Dokumentvorlage.docx',
-                        description: 'Vorlage für Projektdokumentation',
-                        category: 'Dokumente',
+                        name: 'Document Template.docx',
+                        path: '/templates/document-template.docx',
                         type: 'file',
-                        createdAt: '2023-02-20T14:45:00Z',
-                        path: '/templates/dokumentvorlage.docx'
+                        size: 1024,
+                        createdAt: '2023-03-20'
                     },
                     {
-                        id: '3',
-                        name: 'Zeiterfassung.xlsx',
-                        description: 'Excel-Vorlage für Zeiterfassung',
-                        category: 'Tabellen',
-                        type: 'file',
-                        createdAt: '2023-03-10T09:15:00Z',
-                        path: '/templates/zeiterfassung.xlsx'
-                    },
-                    {
-                        id: '4',
-                        name: 'Präsentation.pptx',
-                        description: 'Standardvorlage für Präsentationen',
-                        category: 'Dokumente',
-                        type: 'file',
-                        createdAt: '2023-04-05T11:20:00Z',
-                        path: '/templates/präsentation.pptx'
-                    },
+                        name: 'Web Project',
+                        path: '/templates/web-project',
+                        type: 'folder',
+                        size: 4096,
+                        createdAt: '2023-05-10'
+                    }
                 ];
-
                 setTemplates(mockTemplates);
-
-                // Extrahiere eindeutige Kategorien
-                const uniqueCategories = [...new Set(mockTemplates.map(template => template.category))].filter(Boolean);
-                setCategories(uniqueCategories);
-            } catch (err) {
-                console.error('Error loading templates:', err);
-                setError('Fehler beim Laden der Templates: ' + err.message);
             } finally {
                 setIsLoading(false);
             }
         };
 
         loadTemplates();
-    }, [getTemplates]);
 
-    // Öffne den Anwenden-Dialog
-    const handleApplyTemplate = (template) => {
-        setTemplateToApply(template);
-        setApplyPath(currentPath || '');
-        setIsApplyModalOpen(true);
+        // Listen for template updates from context menu
+        const handleTemplatesUpdated = () => {
+            loadTemplates();
+        };
+
+        window.addEventListener('templates-updated', handleTemplatesUpdated);
+
+        return () => {
+            window.removeEventListener('templates-updated', handleTemplatesUpdated);
+        };
+    }, []);
+
+    /**
+     * Opens the modal to use/apply a template
+     * @param {Object} template - The template to use
+     */
+    const handleUseTemplate = (template) => {
+        if (!template || !template.path) {
+            console.error('Invalid template for use:', template);
+            showError('Invalid template selected.');
+            return;
+        }
+
+        setSelectedTemplate(template);
+        setDestinationPath(currentPath || '');
+        setIsUseModalOpen(true);
     };
 
-    // Wende das Template an
-    const confirmApplyTemplate = async () => {
-        if (!templateToApply || !applyPath) return;
-
-        setIsApplying(true);
+    /**
+     * Applies the selected template to the specified destination path
+     * @async
+     */
+    const applyTemplate = async () => {
+        if (!selectedTemplate || !destinationPath) return;
 
         try {
-            // [Backend Integration] - Template im Backend anwenden
-            // /* BACKEND_INTEGRATION: Template anwenden */
+            await useTemplate(selectedTemplate.path, destinationPath);
 
-            const result = await applyTemplate(templateToApply.path, applyPath);
+            // Reload the directory to show the new content
+            await loadDirectory(currentPath);
 
-            if (result.success) {
-                // Schließe den Dialog und aktualisiere die Ansicht
-                setIsApplyModalOpen(false);
-                setTemplateToApply(null);
+            // Close the modal
+            setIsUseModalOpen(false);
 
-                // Navigiere zum Zielpfad
-                actions.setCurrentPath(applyPath);
-            } else {
-                setError('Fehler beim Anwenden des Templates: ' + (result.error || 'Unbekannter Fehler'));
-            }
+            // Show success message
+            showSuccess(`Template "${selectedTemplate.name}" applied successfully!`);
         } catch (err) {
-            console.error('Error applying template:', err);
-            setError('Fehler beim Anwenden des Templates: ' + err.message);
-        } finally {
-            setIsApplying(false);
+            console.error('Failed to apply template:', err);
+            setError('Failed to apply template. Please try again.');
         }
     };
 
-    // Öffne den Löschen-Dialog
-    const handleDeleteTemplate = (template) => {
-        setTemplateToDelete(template);
-        setIsDeleteModalOpen(true);
-    };
-
-    // Lösche das Template
-    const confirmDeleteTemplate = async () => {
-        if (!templateToDelete) return;
-
-        setIsDeleting(true);
+    /**
+     * Removes a template from the saved templates
+     * @param {Object} template - The template to remove
+     * @async
+     */
+    const handleRemoveTemplate = async (template) => {
+        if (!template || !template.path) {
+            console.error('Invalid template for removal:', template);
+            showError('Invalid template selected.');
+            return;
+        }
 
         try {
-            // [Backend Integration] - Template im Backend löschen
-            // /* BACKEND_INTEGRATION: Template löschen */
+            await removeTemplate(template.path);
 
-            // Simuliere Erfolg
-            const success = true;
-
-            if (success) {
-                // Entferne das Template aus der Liste
-                setTemplates(prev => prev.filter(template => template.id !== templateToDelete.id));
-
-                // Schließe den Dialog
-                setIsDeleteModalOpen(false);
-                setTemplateToDelete(null);
-            } else {
-                setError('Fehler beim Löschen des Templates');
-            }
+            // Update the template list
+            setTemplates(prev => prev.filter(t => t.path !== template.path));
+            showSuccess(`Template "${template.name}" removed successfully.`);
         } catch (err) {
-            console.error('Error deleting template:', err);
-            setError('Fehler beim Löschen des Templates: ' + err.message);
-        } finally {
-            setIsDeleting(false);
+            console.error('Failed to remove template:', err);
+            showError('Failed to remove template. Please try again.');
         }
     };
 
-    // Filtere Templates basierend auf Kategorie und Suchbegriff
-    const filteredTemplates = templates.filter(template => {
-        const matchesCategory = selectedCategory === 'all' || template.category === selectedCategory;
-        const matchesSearch = !searchTerm ||
-            template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (template.description && template.description.toLowerCase().includes(searchTerm.toLowerCase()));
+    /**
+     * Opens the modal to add a new template
+     */
+    const handleAddTemplate = () => {
+        setNewTemplatePath('');
+        setIsAddModalOpen(true);
 
-        return matchesCategory && matchesSearch;
-    });
+        // Focus input after modal opens
+        setTimeout(() => {
+            if (addTemplateInputRef.current) {
+                addTemplateInputRef.current.focus();
+            }
+        }, 100);
+    };
+
+    /**
+     * Saves a new template from the specified path
+     * @async
+     */
+    const saveNewTemplate = async () => {
+        if (!newTemplatePath.trim()) return;
+
+        try {
+            await addTemplate(newTemplatePath.trim());
+
+            // Reload templates
+            const templatePaths = await getTemplatePaths();
+            const templateObjects = convertPathsToTemplates(templatePaths);
+            setTemplates(templateObjects);
+
+            setIsAddModalOpen(false);
+            setNewTemplatePath('');
+
+            showSuccess('Template added successfully!');
+        } catch (err) {
+            console.error('Failed to add template:', err);
+            showError(`Failed to add template: ${err.message || err}`);
+        }
+    };
+
+    /**
+     * Handles form submission for adding a template
+     * @param {React.FormEvent} e - Form submit event
+     */
+    const handleAddTemplateSubmit = (e) => {
+        e.preventDefault();
+        saveNewTemplate();
+    };
+
+    /**
+     * Handles input change for the template path
+     * @param {React.ChangeEvent<HTMLInputElement>} e - Input change event
+     */
+    const handleAddTemplateInputChange = (e) => {
+        setNewTemplatePath(e.target.value);
+    };
+
+    /**
+     * Handles key down events for the add template input
+     * @param {React.KeyboardEvent} e - Keyboard event
+     */
+    const handleAddTemplateKeyDown = (e) => {
+        if (e.key === 'Escape') {
+            setIsAddModalOpen(false);
+        }
+    };
 
     return (
         <div className="template-list-container">
             <div className="template-list-header">
-                <div className="template-list-title">
+                <div className="template-header-left">
                     <h2>Templates</h2>
-                    <span className="template-count">{templates.length} Template(s)</span>
+                    <button
+                        className="template-close-btn"
+                        onClick={onClose}
+                        title="Close Templates"
+                    >
+                        <span className="icon icon-x"></span>
+                    </button>
                 </div>
-
                 <div className="template-list-actions">
-                    <div className="template-search">
-                        <input
-                            type="text"
-                            className="template-search-input"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            placeholder="Templates durchsuchen..."
-                        />
-                    </div>
-
-                    <div className="template-filter">
-                        <select
-                            className="template-category-select"
-                            value={selectedCategory}
-                            onChange={(e) => setSelectedCategory(e.target.value)}
-                        >
-                            <option value="all">Alle Kategorien</option>
-                            {categories.map(category => (
-                                <option key={category} value={category}>{category}</option>
-                            ))}
-                        </select>
-                    </div>
+                    <Button
+                        variant="primary"
+                        onClick={handleAddTemplate}
+                    >
+                        Add Template
+                    </Button>
                 </div>
             </div>
 
-            {error && (
-                <div className="template-list-error">
-                    {error}
-                </div>
-            )}
-
-            <div className="template-list">
+            <div className="template-list-content">
                 {isLoading ? (
                     <div className="template-list-loading">
-                        <div className="loading-spinner"></div>
-                        <p>Templates werden geladen...</p>
+                        <div className="spinner"></div>
+                        <p>Loading templates...</p>
                     </div>
-                ) : filteredTemplates.length === 0 ? (
-                    <div className="template-list-empty">
-                        {searchTerm || selectedCategory !== 'all' ? (
-                            <p>Keine Templates gefunden, die den Filterkriterien entsprechen.</p>
-                        ) : (
-                            <p>Keine Templates vorhanden. Speichere Dateien oder Ordner als Templates, um sie hier zu sehen.</p>
-                        )}
+                ) : error ? (
+                    <div className="template-list-error">
+                        <div className="alert alert-error">
+                            <div className="alert-content">
+                                <p>{error}</p>
+                            </div>
+                        </div>
                     </div>
+                ) : templates.length === 0 ? (
+                    <EmptyState
+                        type="no-templates"
+                        title="No Templates"
+                        message="You haven't saved any templates yet. Templates help you create files and folders with predefined structures."
+                    />
                 ) : (
-                    filteredTemplates.map(template => (
-                        <TemplateItem
-                            key={template.id}
-                            template={template}
-                            onApply={handleApplyTemplate}
-                            onDelete={handleDeleteTemplate}
-                            onClick={() => handleApplyTemplate(template)}
-                        />
-                    ))
+                    <div className="template-grid">
+                        {templates.map((template, index) => {
+                            // Additional safety check
+                            if (!template || typeof template !== 'object') {
+                                console.warn('Skipping invalid template:', template);
+                                return null;
+                            }
+
+                            return (
+                                <TemplateItem
+                                    key={template.path || `template-${index}`}
+                                    template={template}
+                                    onUse={() => handleUseTemplate(template)}
+                                    onRemove={() => handleRemoveTemplate(template)}
+                                />
+                            );
+                        })}
+                    </div>
                 )}
             </div>
 
-            {/* Modal zum Anwenden eines Templates */}
+            {/* Modal for using template */}
             <Modal
-                isOpen={isApplyModalOpen}
-                onClose={() => setIsApplyModalOpen(false)}
-                title="Template anwenden"
+                isOpen={isUseModalOpen}
+                onClose={() => setIsUseModalOpen(false)}
+                title="Use Template"
+                size="sm"
                 footer={
-                    <ModalFooter
-                        onCancel={() => setIsApplyModalOpen(false)}
-                        onConfirm={confirmApplyTemplate}
-                        confirmText="Anwenden"
-                        isConfirmLoading={isApplying}
-                        isConfirmDisabled={!applyPath.trim()}
-                    />
+                    <>
+                        <Button
+                            variant="ghost"
+                            onClick={() => setIsUseModalOpen(false)}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="primary"
+                            onClick={applyTemplate}
+                        >
+                            Apply Template
+                        </Button>
+                    </>
                 }
             >
-                <div className="apply-template-form">
-                    <p>
-                        Du bist dabei, das Template <strong>{templateToApply?.name}</strong> anzuwenden.
-                        Wähle den Zielpfad, in dem das Template erstellt werden soll:
-                    </p>
-
+                <div className="template-use-form">
                     <div className="form-group">
-                        <label htmlFor="apply-path" className="form-label">Zielpfad *</label>
+                        <label htmlFor="template-name">Template</label>
                         <input
-                            id="apply-path"
                             type="text"
-                            className="form-input"
-                            value={applyPath}
-                            onChange={(e) => setApplyPath(e.target.value)}
-                            placeholder="Pfad eingeben"
-                            required
+                            id="template-name"
+                            className="input"
+                            value={selectedTemplate?.name || ''}
+                            disabled
                         />
                     </div>
 
-                    <div className="apply-template-info">
-                        <div className="form-info-title">Template-Info:</div>
-                        <div className="form-info-row">
-                            <span className="form-info-label">Typ:</span>
-                            <span className="form-info-value">
-                {templateToApply?.type === 'directory' ? 'Ordner' : 'Datei'}
-              </span>
+                    <div className="form-group">
+                        <label htmlFor="destination-path">Destination</label>
+                        <input
+                            type="text"
+                            id="destination-path"
+                            className="input"
+                            value={destinationPath}
+                            onChange={(e) => setDestinationPath(e.target.value)}
+                            placeholder="Enter destination path"
+                        />
+                        <div className="input-hint">
+                            This is where the template will be applied.
                         </div>
-                        {templateToApply?.description && (
-                            <div className="form-info-row">
-                                <span className="form-info-label">Beschreibung:</span>
-                                <span className="form-info-value">{templateToApply.description}</span>
-                            </div>
-                        )}
                     </div>
                 </div>
             </Modal>
 
-            {/* Modal zum Löschen eines Templates */}
+            {/* Modal for adding template */}
             <Modal
-                isOpen={isDeleteModalOpen}
-                onClose={() => setIsDeleteModalOpen(false)}
-                title="Template löschen"
+                isOpen={isAddModalOpen}
+                onClose={() => setIsAddModalOpen(false)}
+                title="Add Template"
+                size="sm"
                 footer={
-                    <ModalFooter
-                        onCancel={() => setIsDeleteModalOpen(false)}
-                        onConfirm={confirmDeleteTemplate}
-                        confirmText="Löschen"
-                        confirmVariant="danger"
-                        isConfirmLoading={isDeleting}
-                    />
+                    <>
+                        <Button
+                            variant="ghost"
+                            onClick={() => setIsAddModalOpen(false)}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="primary"
+                            onClick={saveNewTemplate}
+                            disabled={!newTemplatePath.trim()}
+                        >
+                            Add Template
+                        </Button>
+                    </>
                 }
             >
-                <div className="delete-template-confirmation">
-                    <p>
-                        Bist du sicher, dass du das Template <strong>{templateToDelete?.name}</strong> löschen möchtest?
-                    </p>
-                    <p className="delete-warning">
-                        Diese Aktion kann nicht rückgängig gemacht werden.
-                    </p>
-                </div>
+                <form onSubmit={handleAddTemplateSubmit}>
+                    <div className="template-add-form">
+                        <div className="form-group">
+                            <label htmlFor="template-path">Template Path</label>
+                            <input
+                                ref={addTemplateInputRef}
+                                type="text"
+                                id="template-path"
+                                className="input"
+                                value={newTemplatePath}
+                                onChange={handleAddTemplateInputChange}
+                                onKeyDown={handleAddTemplateKeyDown}
+                                placeholder="Enter path to file or folder to save as template"
+                            />
+                            <div className="input-hint">
+                                Enter the full path to a file or folder that you want to save as a template.
+                            </div>
+                        </div>
+                    </div>
+                </form>
             </Modal>
         </div>
     );
