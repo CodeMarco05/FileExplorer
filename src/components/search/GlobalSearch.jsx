@@ -816,7 +816,7 @@ const GlobalSearch = ({ isOpen, onClose }) => {
         startProgressPolling();
 
         try {
-            console.log('Starting background indexing for volumes...');
+            console.log('Background indexing finished for external volumes...');
 
             // Index all volumes in background
             for (const volume of volumesToIndex) {
@@ -1514,7 +1514,7 @@ const GlobalSearch = ({ isOpen, onClose }) => {
                         <div className="indexing-progress">
                             {isLoadingStatus && !isIndexing && (
                                 <div className="progress-header">
-                                    <h3>Checking Indexing Status...</h3>
+                                    <h3>Indexing</h3>
                                     <span className="progress-percentage">Please wait...</span>
                                 </div>
                             )}
@@ -1610,7 +1610,7 @@ const GlobalSearch = ({ isOpen, onClose }) => {
                                             display: 'inline-block'
                                         }}></span>
                                     </div>
-                                    Checking if background indexing is in progress...
+                                    Background indexing has started, please wait...
                                 </div>
                             )}
                         </div>

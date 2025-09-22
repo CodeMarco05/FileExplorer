@@ -289,7 +289,7 @@ const MainLayout = () => {
                         });
                         
                         console.log('MainLayout: Auto-indexing initiated:', result);
-                        showSuccess('Background indexing started for your home directory');
+                        showSuccess('Background indexing finished');
                     } else {
                         console.log('MainLayout: Search engine already has indexed files, skipping auto-indexing');
                     }
