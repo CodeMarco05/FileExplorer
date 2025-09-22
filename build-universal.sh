@@ -48,10 +48,10 @@ if [[ "$OSTYPE" != "darwin"* ]]; then
     exit 1
 fi
 
-print_header "🚀 Universal Explr Build"
+print_header "🚀 Universal File Explorer Build"
 
 # Configuration
-APP_NAME="Explr"
+APP_NAME="File Explorer"
 VERSION="0.2.3"
 TARGETS=("aarch64-apple-darwin" "x86_64-apple-darwin")
 TARGET_NAMES=("Apple Silicon (M1/M2/M3)" "Intel Mac")
