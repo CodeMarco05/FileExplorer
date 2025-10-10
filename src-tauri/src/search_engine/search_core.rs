@@ -2480,7 +2480,7 @@ mod tests_search_core {
         }
 
         // 2. Test with different batch sizes
-        let batch_sizes = [10, 100, 1000, 10000, all_paths.len()];
+        let batch_sizes = [10, 100, 1000, 10000, 100000, 1000000, all_paths.len()];
 
         for &batch_size in &batch_sizes {
             // Reset for this batch size

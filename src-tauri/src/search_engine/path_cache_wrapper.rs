@@ -287,7 +287,7 @@ mod tests_path_cache {
     fn benchmark_cache_size_impact_path_cache() {
         log_info!("Benchmarking impact of cache size on retrieval performance");
 
-        let sizes = [100, 1000, 10000, 100000];
+        let sizes = [100, 1000, 10000, 100000, 1000000];
 
         for &size in &sizes {
             let mut cache = PathCache::new(size);

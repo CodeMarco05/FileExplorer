@@ -39,10 +39,10 @@ pub mod test_generate_test_data {
         use std::fs::{create_dir_all, File};
         use std::time::Instant;
 
-        // Constants for the directory structure
-        const FOLDERS_PER_LEVEL: usize = 20;
-        const FILES_PER_FOLDER: usize = 20;
-        const MAX_DEPTH: usize = 3;
+        // Constants for the directory structure - calculated for ~1M paths
+        const FOLDERS_PER_LEVEL: usize = 15;
+        const FILES_PER_FOLDER: usize = 60;
+        const MAX_DEPTH: usize = 4;
 
         // Remove the directory if it already exists
         if base_path.exists() {

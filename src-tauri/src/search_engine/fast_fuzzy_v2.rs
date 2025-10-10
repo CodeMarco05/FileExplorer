@@ -1812,11 +1812,11 @@ mod tests_fast_fuzzy_v2 {
         }
 
         // 2. Test with different batch sizes
-        let batch_sizes = [10, 100, 1000, 10000, all_paths.len()];
+        let batch_sizes = [10, 100, 1000, 10000, 100000, 1000000];
 
         for &batch_size in &batch_sizes {
             // Reset for this batch size
-            let subset_size = batch_size.min(all_paths.len());
+            let subset_size = batch_size.min(1000000);
 
             // Create a fresh engine with only the needed paths
             let mut subset_matcher = PathMatcher::new();

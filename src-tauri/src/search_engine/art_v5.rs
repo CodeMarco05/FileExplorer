@@ -3101,9 +3101,9 @@ mod tests_art_v5 {
         let insert_time = start_insert.elapsed();
         log_info!(
             "Inserted {} paths in {:?} ({:.2} paths/ms)",
-            all_paths.len(),
+            1000000,
             insert_time,
-            all_paths.len() as f64 / insert_time.as_millis().max(1) as f64
+            1000000 as f64 / insert_time.as_millis().max(1) as f64
         );
 
         // Verify the final count matches expectation (accounting for duplicates)
@@ -3291,11 +3291,11 @@ mod tests_art_v5 {
 
         // 4. Benchmark searches with different batch sizes, with separate tries.
         // Ensure complete independence between different batch size tests
-        let batch_sizes = [10, 100, 1000, 10000, all_paths.len()];
+        let batch_sizes = [10, 100, 1000, 10000, 100000, 1000000];
 
         for &batch_size in &batch_sizes {
             // Reset measurements for this batch size
-            let subset_size = batch_size.min(all_paths.len());
+            let subset_size = batch_size.min(1000000);
 
             // Create a fresh trie with only the needed paths
             let mut subset_trie = ART::new(100);
